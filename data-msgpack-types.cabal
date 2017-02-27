@@ -36,6 +36,7 @@ library
       Data.MessagePack.Types.Generic
       Data.MessagePack.Types.Instances
       Data.MessagePack.Types.Object
+      Data.MessagePack.Types.Option
       Data.MessagePack.Types.Result
   build-depends:
       base < 5
