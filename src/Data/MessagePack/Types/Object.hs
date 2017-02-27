@@ -3,7 +3,9 @@
 {-# LANGUAGE DeriveGeneric      #-}
 {-# LANGUAGE LambdaCase         #-}
 {-# LANGUAGE Safe               #-}
-module Data.MessagePack.Types.Object (Object (..)) where
+module Data.MessagePack.Types.Object
+  ( Object (..)
+  ) where
 
 import           Control.Applicative       ((<$), (<$>), (<*>), (<|>))
 import           Control.DeepSeq           (NFData (..))
@@ -48,7 +50,6 @@ data Object
   deriving (Read, Show, Eq, Ord, Typeable, Generic)
 
 instance NFData Object
-
 
 instance Arbitrary Object where
   arbitrary = Gen.sized $ \n -> Gen.oneof

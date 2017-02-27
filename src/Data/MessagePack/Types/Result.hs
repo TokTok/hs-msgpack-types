@@ -2,7 +2,9 @@
 {-# LANGUAGE DeriveFunctor     #-}
 {-# LANGUAGE DeriveTraversable #-}
 {-# LANGUAGE Safe              #-}
-module Data.MessagePack.Types.Result where
+module Data.MessagePack.Types.Result
+  ( Result (..)
+  ) where
 
 import           Control.Applicative       (Alternative (..), Applicative (..),
                                             (<$>), (<*>))
