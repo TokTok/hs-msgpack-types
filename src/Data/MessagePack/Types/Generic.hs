@@ -105,7 +105,7 @@ instance (GSumPack a, GSumPack b) => GSumPack (a :+: b) where
 
 
 instance GSumPack (C1 c U1) where
-  sumToObject code _ _ = toObject code
+  sumToObject code _ _ = toObject [code]
   sumFromObject _ _ = gFromObject
 
 
