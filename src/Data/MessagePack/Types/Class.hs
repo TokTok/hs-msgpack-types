@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP                  #-}
 {-# LANGUAGE DefaultSignatures    #-}
 {-# LANGUAGE FlexibleContexts     #-}
 {-# LANGUAGE FlexibleInstances    #-}
@@ -36,9 +37,11 @@ import qualified Data.IntMap.Strict            as IntMap
 import qualified Data.Map                      as Map
 import qualified Data.Text                     as T
 import qualified Data.Text.Lazy                as LT
+#if HAVE_VECTOR
 import qualified Data.Vector                   as V
 import qualified Data.Vector.Storable          as VS
 import qualified Data.Vector.Unboxed           as VU
+#endif
 import           Data.Word                     (Word, Word16, Word32, Word64,
                                                 Word8)
 import           GHC.Generics
@@ -192,6 +195,7 @@ instance MessagePack a => MessagePack [a] where
     ObjectArray xs -> mapM fromObject xs
     _              -> fail "invalid encoding for list"
 
+#if HAVE_VECTOR
 instance MessagePack a => MessagePack (V.Vector a) where
   toObject = ObjectArray . map toObject . V.toList
   fromObject = \case
@@ -209,6 +213,7 @@ instance (MessagePack a, VS.Storable a) => MessagePack (VS.Vector a) where
   fromObject = \case
     ObjectArray o -> VS.fromList <$> mapM fromObject o
     _             -> fail "invalid encoding for Storable Vector"
+#endif
 
 -- Instances for map-like data structures.
 
