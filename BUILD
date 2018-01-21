@@ -10,6 +10,7 @@ haskell_library(
         "deepseq",
     ],
     src_strip_prefix = "src",
+    visibility = ["//visibility:public"],
     deps = [
         "@haskell_QuickCheck//:QuickCheck",
         "@haskell_hashable//:hashable",
