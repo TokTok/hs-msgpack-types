@@ -7,13 +7,11 @@ module Data.MessagePack.Types.Object
   ( Object (..)
   ) where
 
-import           Control.Applicative       ((<$), (<$>), (<*>), (<|>))
+import           Control.Applicative       ((<$>), (<*>))
 import           Control.DeepSeq           (NFData (..))
 import qualified Data.ByteString           as S
-import qualified Data.ByteString.Lazy      as L
 import           Data.Int                  (Int64)
 import qualified Data.Text                 as T
-import qualified Data.Text.Lazy            as LT
 import           Data.Typeable             (Typeable)
 import           Data.Word                 (Word64, Word8)
 import           GHC.Generics              (Generic)
