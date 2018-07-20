@@ -1,5 +1,0 @@
-inherits: haskell
-
-package:
-  name: data-msgpack-types
-  version: 0.0.1

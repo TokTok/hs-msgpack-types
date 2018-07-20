@@ -1,7 +1,6 @@
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE DeriveGeneric      #-}
-{-# LANGUAGE LambdaCase         #-}
 {-# LANGUAGE Safe               #-}
 module Data.MessagePack.Types.Object
   ( Object (..)
@@ -15,7 +14,6 @@ import qualified Data.Text                 as T
 import           Data.Typeable             (Typeable)
 import           Data.Word                 (Word64, Word8)
 import           GHC.Generics              (Generic)
-import           Prelude                   hiding (putStr)
 import           Test.QuickCheck.Arbitrary (Arbitrary, arbitrary)
 import qualified Test.QuickCheck.Gen       as Gen
 
