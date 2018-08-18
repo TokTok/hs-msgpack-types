@@ -1,4 +1,4 @@
-load("@io_tweag_rules_haskell//haskell:haskell.bzl", "haskell_library")
+load("@io_tweag_rules_haskell//haskell:haskell.bzl", "haskell_library", "haskell_test")
 load("//tools/project:build_defs.bzl", "project")
 
 project(
@@ -26,5 +26,22 @@ haskell_library(
         "@haskell_hashable//:hashable",
         "@haskell_unordered_containers//:unordered-containers",
         "@haskell_vector//:vector",
+    ],
+)
+
+haskell_test(
+    name = "test",
+    srcs = glob(["test/**/*.hs"]),
+    compiler_flags = [
+        "-Wall",
+        "-Werror",
+        "-Wno-unused-imports",
+    ],
+    src_strip_prefix = "test",
+    deps = [
+        ":hs-msgpack-types",
+        "//third_party/haskell:base",
+        "@haskell_QuickCheck//:QuickCheck",
+        "@haskell_hspec//:hspec",
     ],
 )
