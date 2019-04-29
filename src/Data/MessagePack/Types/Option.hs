@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP                #-}
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE DeriveFoldable     #-}
 {-# LANGUAGE DeriveFunctor      #-}
@@ -33,10 +34,13 @@ instance Applicative Option where
 
 instance Monad Option where
   return = Some
-  fail _ = None
 
   None   >>= _ = None
   Some x >>= f = f x
+#if (MIN_VERSION_base(4,13,0))
+instance MonadFail Option where
+#endif
+  fail _ = None
 
 instance Alternative Option where
   empty = None

@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP                  #-}
 {-# LANGUAGE DefaultSignatures    #-}
 {-# LANGUAGE FlexibleContexts     #-}
 {-# LANGUAGE FlexibleInstances    #-}
@@ -51,17 +52,28 @@ import           Data.MessagePack.Types.Object
 
 class GMessagePack f where
   gToObject   :: f a -> Object
+#if (MIN_VERSION_base(4,13,0))
+  gFromObject :: (Applicative m, Monad m, MonadFail m) => Object -> m (f a)
+#else
   gFromObject :: (Applicative m, Monad m) => Object -> m (f a)
+#endif
 
 
 class MessagePack a where
   toObject   :: a -> Object
+#if (MIN_VERSION_base(4,13,0))
+  fromObject :: (Applicative m, Monad m, MonadFail m) => Object -> m a
+#else
   fromObject :: (Applicative m, Monad m) => Object -> m a
+#endif
 
   default toObject :: (Generic a, GMessagePack (Rep a))
                    => a -> Object
   toObject = genericToObject
   default fromObject :: ( Applicative m, Monad m
+#if (MIN_VERSION_base(4,13,0))
+                        , MonadFail m
+#endif
                         , Generic a, GMessagePack (Rep a))
                      => Object -> m a
   fromObject = genericFromObject
@@ -72,6 +84,9 @@ genericToObject :: (Generic a, GMessagePack (Rep a))
 genericToObject = gToObject . from
 
 genericFromObject :: ( Applicative m, Monad m
+#if (MIN_VERSION_base(4,13,0))
+                     , MonadFail m
+#endif
                      , Generic a, GMessagePack (Rep a))
                   => Object -> m a
 genericFromObject x = to <$> gFromObject x
