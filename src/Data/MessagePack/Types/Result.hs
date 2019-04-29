@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP               #-}
 {-# LANGUAGE DeriveFoldable    #-}
 {-# LANGUAGE DeriveFunctor     #-}
 {-# LANGUAGE DeriveTraversable #-}
@@ -36,10 +37,14 @@ instance Alternative Result where
 
 instance Monad Result where
   return = pure
-  fail = Failure
 
   Success x   >>= f = f x
   Failure msg >>= _ = Failure msg
+
+#if (MIN_VERSION_base(4,13,0))
+instance MonadFail Result where
+#endif
+  fail = Failure
 
 
 instance Arbitrary a => Arbitrary (Result a) where

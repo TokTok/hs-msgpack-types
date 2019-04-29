@@ -1,4 +1,5 @@
 {-# OPTIONS_GHC -fno-warn-orphans #-}
+{-# LANGUAGE CPP                 #-}
 {-# LANGUAGE FlexibleContexts    #-}
 {-# LANGUAGE FlexibleInstances   #-}
 {-# LANGUAGE IncoherentInstances #-}
@@ -20,7 +21,7 @@ import           Data.MessagePack.Types.Object (Object (..))
 
 instance GMessagePack V1 where
   gToObject = undefined
-  gFromObject = fail "can't instantiate void type"
+  gFromObject _ = fail "can't instantiate void type"
 
 instance GMessagePack U1 where
   gToObject U1 = ObjectNil
@@ -55,7 +56,11 @@ instance MessagePack a => GMessagePack (K1 i a) where
 
 class GProdPack f where
   prodToObject :: f a -> [Object]
+#if (MIN_VERSION_base(4,13,0))
+  prodFromObject :: (Applicative m, Monad m, MonadFail m) => [Object] -> m (f a)
+#else
   prodFromObject :: (Applicative m, Monad m) => [Object] -> m (f a)
+#endif
 
 
 instance (GMessagePack a, GProdPack b) => GProdPack (a :*: b) where
@@ -71,13 +76,21 @@ instance GMessagePack a => GProdPack (M1 t c a) where
 
 -- Sum type packing.
 
+#if (MIN_VERSION_base(4,13,0))
+checkSumFromObject0 :: (Applicative m, Monad m, MonadFail m) => (GSumPack f) => Word64 -> Word64 -> m (f a)
+#else
 checkSumFromObject0 :: (Applicative m, Monad m) => (GSumPack f) => Word64 -> Word64 -> m (f a)
+#endif
 checkSumFromObject0 size code
   | code < size = sumFromObject code size ObjectNil
   | otherwise   = fail "invalid encoding for sum type"
 
 
+#if (MIN_VERSION_base(4,13,0))
+checkSumFromObject :: (Applicative m, Monad m, MonadFail m) => (GSumPack f) => Word64 -> Word64 -> Object -> m (f a)
+#else
 checkSumFromObject :: (Applicative m, Monad m) => (GSumPack f) => Word64 -> Word64 -> Object -> m (f a)
+#endif
 checkSumFromObject size code x
   | code < size = sumFromObject code size x
   | otherwise   = fail "invalid encoding for sum type"
@@ -85,7 +98,11 @@ checkSumFromObject size code x
 
 class GSumPack f where
   sumToObject :: Word64 -> Word64 -> f a -> Object
+#if (MIN_VERSION_base(4,13,0))
+  sumFromObject :: (Applicative m, Monad m, MonadFail m) => Word64 -> Word64 -> Object -> m (f a)
+#else
   sumFromObject :: (Applicative m, Monad m) => Word64 -> Word64 -> Object -> m (f a)
+#endif
 
 
 instance (GSumPack a, GSumPack b) => GSumPack (a :+: b) where
