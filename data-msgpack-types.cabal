@@ -1,5 +1,5 @@
 name:                 data-msgpack-types
-version:              0.0.2
+version:              0.0.3
 synopsis:             A Haskell implementation of MessagePack.
 homepage:             http://msgpack.org/
 license:              BSD3
