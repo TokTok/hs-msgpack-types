@@ -73,7 +73,7 @@ spec = do
 
     describe "empty" $
       it "is a failure" $
-        empty <|> O.Some "a" `shouldBe` O.Some "a"
+        empty' <|> O.Some "a" `shouldBe` O.Some "a"
 
   describe "MonadPlus" $ do
     it "chooses the left-most success" $ do
@@ -105,6 +105,9 @@ spec = do
 
     pure' :: a -> O.Option a
     pure' = pure
+
+    empty' :: O.Option a
+    empty' = empty
 
     --
     -- Applicative laws.

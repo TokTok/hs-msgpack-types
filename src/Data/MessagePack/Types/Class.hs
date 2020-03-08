@@ -1,11 +1,10 @@
-{-# LANGUAGE CPP                  #-}
-{-# LANGUAGE DefaultSignatures    #-}
-{-# LANGUAGE FlexibleContexts     #-}
-{-# LANGUAGE FlexibleInstances    #-}
-{-# LANGUAGE IncoherentInstances  #-}
-{-# LANGUAGE LambdaCase           #-}
-{-# LANGUAGE Trustworthy          #-}
-{-# LANGUAGE TypeSynonymInstances #-}
+{-# LANGUAGE CPP                 #-}
+{-# LANGUAGE DefaultSignatures   #-}
+{-# LANGUAGE FlexibleContexts    #-}
+{-# LANGUAGE FlexibleInstances   #-}
+{-# LANGUAGE IncoherentInstances #-}
+{-# LANGUAGE LambdaCase          #-}
+{-# LANGUAGE Trustworthy         #-}
 
 --------------------------------------------------------------------
 -- |

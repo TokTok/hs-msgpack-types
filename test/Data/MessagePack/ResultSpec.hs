@@ -72,7 +72,7 @@ spec = do
 
     describe "empty" $
       it "is a failure" $
-        empty <|> R.Success "a" `shouldBe` R.Success "a"
+        empty' <|> R.Success "a" `shouldBe` R.Success "a"
 
   where
     --
@@ -91,6 +91,9 @@ spec = do
 
     pure' :: a -> R.Result a
     pure' = pure
+
+    empty' :: R.Result a
+    empty' = empty
 
     --
     -- Applicative laws.
