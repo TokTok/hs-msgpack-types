@@ -10,11 +10,7 @@ project(
 haskell_library(
     name = "hs-msgpack-types",
     srcs = glob(["src/**/*.*hs"]),
-    compiler_flags = [
-        "-Wall",
-        "-Werror",
-        "-Wno-unused-imports",
-    ],
+    compiler_flags = ["-Wno-unused-imports"],
     src_strip_prefix = "src",
     version = "0.0.2",
     visibility = ["//visibility:public"],
@@ -33,11 +29,7 @@ haskell_library(
 
 hspec_test(
     name = "test",
-    compiler_flags = [
-        "-Wall",
-        "-Werror",
-        "-Wno-unused-imports",
-    ],
+    compiler_flags = ["-Wno-unused-imports"],
     deps = [
         ":hs-msgpack-types",
         hazel_library("QuickCheck"),
