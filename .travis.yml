@@ -23,7 +23,7 @@ script:
   - hlint .
   - stylish-haskell-lhs -i .
   - git diff --exit-code
-  - travis_wait stack --no-terminal test --coverage
+  - stack --no-terminal test --coverage
   - shc $PACKAGE testsuite
 
 before_deploy:
@@ -32,7 +32,7 @@ before_deploy:
 deploy:
   provider: releases
   token:
-    secure: "cIoa8eJDkJXZ8uCF64O2SOgThvnZsyTmTx0AN5gT/w5vSreCpbT6YiHGR690y6ObMaDUVDZFBqBJm0vjcV9GeuOXleLW3Mix5MsBg8mBzzm+xnh4kuRK5wTxLqzkFCVnbvawW9BEBv9wSoLtT12FVpsStzFBO+RJWnWMTiOjCDYO+b4lCB6ZrspVPSYAjQvLuk06ptwrJEUepgMpF81lniadt0OhaBD6s4HyyT4zBSZucK3xZsOyAdVmekr/4sT7OOtFfw2Hlrq99x9gWle8h80spIOXwrFUJTuwsFmIepO7ZVhx8Qhra6aqSaltIootcrKkOqCNeqbwJNDhiH99rXcPeyvH18R18oGSYJS1MQqRhJl/G8V91SplPDVSftmPOz39HmNU4e+W0bNTVwzyEQ9vT1Fs/1lpFg4EysA3kNXNILXXvlmwTQrtGZe7bBmD7BRIUDUJ3cIXSD/z1u//sBVrboC24RW0BedWn+bu8vR+51FQTNU0BWaFYi4AIaaf5a8PoFTQtZBr5+9wrPohQGcgFUcnDXPRusNfSJpXIIKZ7+5a5+mR79iMLrd+YTOBXPvpjVYmGPsAVTHibbMsxOmKI1kEW/pUM3zKqYRtXpLzM2wktv+/FdcSZPnIMU8M32UH6q21Thl6+F4TCAOwcx7wo1lbwaPL0rYcdMOFrzk="
+    secure: "GETDyyKHg5qRIICJGLMEGjxqajLDkFHg176fNgxc+M2+6X45a9afutBR3yqMTbDxQG1N11aNJII10JX3YxPAl9UKCwiPOB/24VXpE5EA0BzT1T3XIkQK4y4+JAj6syf55xWxnh98r7KMwmchU7e/7zTUR7kJgndNc0CjYq19WowjOjX21SeGznb+MnefbYzBI+vjmNvZNlgi62BSJ4BidLXNnfnQbL+enebptWi8naFdF3A5+5rMMQ0c5pkJm3QBOK1JIphhYFWDH9QHpPO9kR8HVwV32ArMxxe5moznssHW9/SFnmaMXJn+t4N+57cCXEFrtBovIxf/Zxtk9kvRkzf0iC0Bpo5mHMCVZ4Yd0IliUg+VszUa0LO/DOJutn9U3HcG1JcD5B3Mb8pdGwcb7/hRKI6gvwmb/YyJa2AIeiI3eXHCouWXtBM9Y0b/eSVmlJC+EpVMTaDtro7raX+UWwme470EiQ21cTXmwGOIrD4+/ooYOYKu7PaO0Ti6xsHuW0cAl0KF5O2y3wiCkU1i0aBt3xo96Brthar3MsGCplCX8JK0kNQr6iq1WkeDAVkJkek95ylG/udbbrfa6lStzoa7mzdq1OktafmCVoe0P4WCWf6VBQvTSRZVIHhjp8wIbYSP4MNIxLR+eguyjX0+6Z1UFBY68vIRRvRqX/6dKpg="
   file: $PACKAGE-$TRAVIS_TAG.tar.gz
   skip_cleanup: true
   on:
