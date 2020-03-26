@@ -24,8 +24,6 @@ script:
   - git diff --exit-code
   - stack --no-terminal test --coverage
   - shc msgpack-types testsuite
-
-before_deploy:
   - stack sdist --tar-dir .
 
 deploy:
@@ -41,9 +39,8 @@ deploy:
 after_deploy:
   - mkdir -p "$HOME/.stack/upload"
   - echo "{\"username\":\"$HACKAGE_USERNAME\",\"password\":\"$HACKAGE_PASSWORD\"}" > $HOME/.stack/upload/credentials.json
-  # TODO(iphydf): Enable this once the above deploy part is working.
-  - echo stack --no-terminal upload .
+  - stack --no-terminal upload .
 
-# Only build pull requests and releases, don't build master on pushes.
+# Only build pull requests and releases, don't build master on pushes,
 # except through api or cron.
 if: type IN (pull_request, api, cron) OR tag IS present
