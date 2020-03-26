@@ -5,7 +5,6 @@ os: linux
 
 env:
   global:
-    - PACKAGE=msgpack-types
     # HACKAGE_USERNAME=[secure]
     - secure: "jicOwfg/YO+V/SOew9Ui4YKsYECZQD9noMq4rN5SHrQjTDvDEZE92US01Xw09YOfQe+BCRWiy18i9GThWeXAJHXZh06c1e/KjDLnMWWqgt4QSmepSRdN2ImYF/I3t7aG2Zp3QYCrqFjq66hUw/danQqUIpMpJ3M7IVyF/U5eq/U+BV243o5BDnaEZDLRbwWsFAN7Y4UX5n3aFoaTBYyU4gkRUmTSkU19QV4pW9izhnA8AyqPWqUZyqTOQOnmDPLC4j51vzEnduzv7kfv4l/AYk87hw96KVySo+Hvd2841GaoFHAgok0CS+sbmzrUjnmHsVBqlslNpro7FMo0FnUnLdV/dnssjsMt/FtVaeKacWD1jf2WFKLAFoEJzgrb8LIpUvYiSHjYOP5vY8a0/6nEDM6pE3/YasSCD0j6uWZfA4G3JmNSi4cqKzCz/panQbZxAxj75M61vDcP5BnAtTVd5yJ7aQSXjEMOWTYLWgf6JdzzjJCia/YMzmconjmF5enKuv5RZfasQoHhhP4ZHlojcEYCH+G3oM4oL7NNIQLpk27yF4vS340jHUJSKoYsM2ysTx2dTnyd97fhfAPwzwI3ZQRHMZK1GcDpv+K42Xu1DkXcIqADJEkhZirTuLV6kNC0OZlxwrYmqE6qvYWMhpvRgG2dmppEV9/GgAY0jnYQkkU="
     # HACKAGE_PASSWORD=[secure]
@@ -24,7 +23,7 @@ script:
   - stylish-haskell-lhs -i .
   - git diff --exit-code
   - stack --no-terminal test --coverage
-  - shc $PACKAGE testsuite
+  - shc msgpack-types testsuite
 
 before_deploy:
   - stack sdist --tar-dir .
@@ -33,7 +32,7 @@ deploy:
   provider: releases
   token:
     secure: "GETDyyKHg5qRIICJGLMEGjxqajLDkFHg176fNgxc+M2+6X45a9afutBR3yqMTbDxQG1N11aNJII10JX3YxPAl9UKCwiPOB/24VXpE5EA0BzT1T3XIkQK4y4+JAj6syf55xWxnh98r7KMwmchU7e/7zTUR7kJgndNc0CjYq19WowjOjX21SeGznb+MnefbYzBI+vjmNvZNlgi62BSJ4BidLXNnfnQbL+enebptWi8naFdF3A5+5rMMQ0c5pkJm3QBOK1JIphhYFWDH9QHpPO9kR8HVwV32ArMxxe5moznssHW9/SFnmaMXJn+t4N+57cCXEFrtBovIxf/Zxtk9kvRkzf0iC0Bpo5mHMCVZ4Yd0IliUg+VszUa0LO/DOJutn9U3HcG1JcD5B3Mb8pdGwcb7/hRKI6gvwmb/YyJa2AIeiI3eXHCouWXtBM9Y0b/eSVmlJC+EpVMTaDtro7raX+UWwme470EiQ21cTXmwGOIrD4+/ooYOYKu7PaO0Ti6xsHuW0cAl0KF5O2y3wiCkU1i0aBt3xo96Brthar3MsGCplCX8JK0kNQr6iq1WkeDAVkJkek95ylG/udbbrfa6lStzoa7mzdq1OktafmCVoe0P4WCWf6VBQvTSRZVIHhjp8wIbYSP4MNIxLR+eguyjX0+6Z1UFBY68vIRRvRqX/6dKpg="
-  file: $PACKAGE-$TRAVIS_TAG.tar.gz
+  file: msgpack-types-0.0.4.tar.gz
   skip_cleanup: true
   on:
     repo: TokTok/hs-msgpack-types
@@ -44,3 +43,7 @@ after_deploy:
   - echo "{\"username\":\"$HACKAGE_USERNAME\",\"password\":\"$HACKAGE_PASSWORD\"}" > $HOME/.stack/upload/credentials.json
   # TODO(iphydf): Enable this once the above deploy part is working.
   - echo stack --no-terminal upload .
+
+# Only build pull requests and releases, don't build master on pushes.
+# except through api or cron.
+if: type IN (pull_request, api, cron) OR tag IS present
