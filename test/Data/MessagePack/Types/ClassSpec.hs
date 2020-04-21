@@ -98,8 +98,10 @@ instance (Arbitrary a, Hashable a, Eq a, Arbitrary b) => Arbitrary (HashMap.Hash
 spec :: Spec
 spec = do
     describe "GMessagePack" $ do
-        it "is a reversible operation" $ property $ \(x :: MyType) ->
-            fromObject (toObject x) `shouldBe` Just x
+        it "is a reversible operation"
+            $ withMaxSuccess 100000
+            $ property
+            $ \(x :: MyType) -> fromObject (toObject x) `shouldBe` Just x
 
         it "handles arbitrary values"
             $ withMaxSuccess 100000
