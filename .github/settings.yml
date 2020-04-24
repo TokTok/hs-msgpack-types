@@ -1,0 +1,20 @@
+---
+_extends: template
+
+repository:
+  name: hs-msgpack-types
+  description: Abstract data types and type classes for Haskell to MessagePack value converters
+  topics: msgpack, haskell
+  has_issues: true
+
+branches:
+  - name: "master"
+    protection:
+      required_status_checks:
+        contexts:
+          - Codacy/PR Quality Review
+          - Travis CI - Pull Request
+          - WIP
+          - code-review/reviewable
+          - coverage/coveralls
+          - license/cla
