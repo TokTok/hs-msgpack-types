@@ -8,10 +8,12 @@
 {-# LANGUAGE Safe                #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeOperators       #-}
+{-# LANGUAGE UndecidableInstances #-}
 module Data.MessagePack.Types.Generic () where
 
 import           Control.Applicative           (Applicative, (<$>), (<*>))
 import           Control.Monad                 ((>=>))
+import           Control.Monad.Trans.State.Strict
 import           Data.Bits                     (shiftR)
 import           Data.Word                     (Word64)
 import           GHC.Generics
@@ -28,9 +30,11 @@ instance GMessagePack U1 where
     gFromObject ObjectNil = return U1
     gFromObject _         = fail "invalid encoding for custom unit type"
 
-instance (GMessagePack a, GProdPack b) => GMessagePack (a :*: b) where
+instance (GProdPack a) => GMessagePack (a) where
     gToObject   = toObject . prodToObject
-    gFromObject = fromObject >=> prodFromObject
+    gFromObject o = do
+        list <- fromObject o
+        evalStateT prodFromObject list
 
 instance (GSumPack a, GSumPack b, SumSize a, SumSize b) => GMessagePack (a :+: b) where
     gToObject = sumToObject 0 size
@@ -61,19 +65,25 @@ class GProdPack f where
            , MonadFail m
 #endif
            )
-        => [Object]
-        -> m (f a)
+        => StateT [Object] m (f a)
 
 
-instance (GMessagePack a, GProdPack b) => GProdPack (a :*: b) where
-    prodToObject (a :*: b) = gToObject a : prodToObject b
-    prodFromObject (a : b) = (:*:) <$> gFromObject a <*> prodFromObject b
-    prodFromObject []      = fail "invalid encoding for product type"
+instance (GProdPack a, GProdPack b) => GProdPack (a :*: b) where
+    prodToObject (a :*: b) = prodToObject a ++ prodToObject b
+    prodFromObject = do
+        f <- prodFromObject
+        g <- prodFromObject
+        pure $ f :*: g
 
 instance GMessagePack a => GProdPack (M1 t c a) where
     prodToObject (M1 x) = [gToObject x]
-    prodFromObject [x] = M1 <$> gFromObject x
-    prodFromObject _   = fail "invalid encoding for product type"
+    prodFromObject = do
+        objs <- get
+        case objs of
+            (x:xs) -> do
+                put xs
+                M1 <$> gFromObject x
+            _      -> fail "invalid encoding for product type"
 
 
 -- Sum type packing.
