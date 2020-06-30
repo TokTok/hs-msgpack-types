@@ -1,25 +1,25 @@
 {-# OPTIONS_GHC -fno-warn-orphans #-}
-{-# LANGUAGE CPP                 #-}
-{-# LANGUAGE FlexibleContexts    #-}
-{-# LANGUAGE FlexibleInstances   #-}
-{-# LANGUAGE IncoherentInstances #-}
-{-# LANGUAGE KindSignatures      #-}
-{-# LANGUAGE LambdaCase          #-}
-{-# LANGUAGE Safe                #-}
-{-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE TypeOperators       #-}
+{-# LANGUAGE CPP                  #-}
+{-# LANGUAGE FlexibleContexts     #-}
+{-# LANGUAGE FlexibleInstances    #-}
+{-# LANGUAGE IncoherentInstances  #-}
+{-# LANGUAGE KindSignatures       #-}
+{-# LANGUAGE LambdaCase           #-}
+{-# LANGUAGE Safe                 #-}
+{-# LANGUAGE ScopedTypeVariables  #-}
+{-# LANGUAGE TypeOperators        #-}
 {-# LANGUAGE UndecidableInstances #-}
 module Data.MessagePack.Types.Generic () where
 
-import           Control.Applicative           (Applicative, (<$>), (<*>))
-import           Control.Monad                 ((>=>))
+import           Control.Applicative              (Applicative, (<$>), (<*>))
+import           Control.Monad                    ((>=>))
 import           Control.Monad.Trans.State.Strict
-import           Data.Bits                     (shiftR)
-import           Data.Word                     (Word64)
+import           Data.Bits                        (shiftR)
+import           Data.Word                        (Word64)
 import           GHC.Generics
 
 import           Data.MessagePack.Types.Class
-import           Data.MessagePack.Types.Object (Object (..))
+import           Data.MessagePack.Types.Object    (Object (..))
 
 instance GMessagePack V1 where
     gToObject = undefined
