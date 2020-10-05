@@ -1,5 +1,5 @@
 name:                 msgpack-types
-version:              0.0.4
+version:              0.1.0
 synopsis:             A Haskell implementation of MessagePack.
 homepage:             http://msgpack.org/
 license:              BSD3
@@ -35,7 +35,6 @@ library
       Data.MessagePack.Types.Assoc
       Data.MessagePack.Types.Class
       Data.MessagePack.Types.Generic
-      Data.MessagePack.Types.Instances
       Data.MessagePack.Types.Object
   build-depends:
       base < 5
