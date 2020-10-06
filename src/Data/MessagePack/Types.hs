@@ -5,7 +5,7 @@ module Data.MessagePack.Types
     , MessagePack (..)
     ) where
 
-import           Data.MessagePack.Types.Assoc     (Assoc (..))
-import           Data.MessagePack.Types.Class     (MessagePack (..))
-import           Data.MessagePack.Types.Instances ()
-import           Data.MessagePack.Types.Object    (Object (..))
+import           Data.MessagePack.Types.Assoc   (Assoc (..))
+import           Data.MessagePack.Types.Class   (MessagePack (..))
+import           Data.MessagePack.Types.Generic ()
+import           Data.MessagePack.Types.Object  (Object (..))
