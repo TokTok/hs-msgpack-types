@@ -12,7 +12,7 @@ branches:
     protection:
       required_status_checks:
         contexts:
-          - "Cabal Build / build (pull_request)"
+          - "build"
           - "cirrus-ci"
           - "Codacy Static Code Analysis"
           - "code-review/reviewable"
