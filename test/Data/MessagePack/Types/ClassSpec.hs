@@ -12,8 +12,8 @@ import           Control.Applicative               (empty, pure, (<$>), (<*>),
 import           Control.Monad                     (mplus, mzero)
 import qualified Data.ByteString                   as BS
 import qualified Data.ByteString.Lazy              as LBS
-import           Data.Hashable                     (Hashable)
 import qualified Data.HashMap.Strict               as HashMap
+import           Data.Hashable                     (Hashable)
 import           Data.Int                          (Int16, Int32, Int64, Int8)
 import qualified Data.IntMap.Strict                as IntMap
 import qualified Data.Map                          as Map
