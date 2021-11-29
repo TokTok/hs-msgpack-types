@@ -1,5 +1,6 @@
 {-# LANGUAGE DeriveDataTypeable         #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE StrictData                 #-}
 {-# LANGUAGE Trustworthy                #-}
 
 --------------------------------------------------------------------

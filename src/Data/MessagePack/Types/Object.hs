@@ -2,6 +2,7 @@
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE DeriveGeneric      #-}
 {-# LANGUAGE Safe               #-}
+{-# LANGUAGE StrictData         #-}
 module Data.MessagePack.Types.Object
     ( Object (..)
     ) where
@@ -22,25 +23,25 @@ import qualified Test.QuickCheck.Gen       as Gen
 data Object
     = ObjectNil
       -- ^ represents nil
-    | ObjectBool                  !Bool
+    | ObjectBool                  Bool
       -- ^ represents true or false
-    | ObjectInt    {-# UNPACK #-} !Int64
+    | ObjectInt    {-# UNPACK #-} Int64
       -- ^ represents a negative integer
-    | ObjectWord   {-# UNPACK #-} !Word64
+    | ObjectWord   {-# UNPACK #-} Word64
       -- ^ represents a positive integer
-    | ObjectFloat  {-# UNPACK #-} !Float
+    | ObjectFloat  {-# UNPACK #-} Float
       -- ^ represents a floating point number
-    | ObjectDouble {-# UNPACK #-} !Double
+    | ObjectDouble {-# UNPACK #-} Double
       -- ^ represents a floating point number
-    | ObjectStr                   !T.Text
+    | ObjectStr                   T.Text
       -- ^ extending Raw type represents a UTF-8 string
-    | ObjectBin                   !S.ByteString
+    | ObjectBin                   S.ByteString
       -- ^ extending Raw type represents a byte array
-    | ObjectArray                 ![Object]
+    | ObjectArray                 [Object]
       -- ^ represents a sequence of objects
-    | ObjectMap                   ![(Object, Object)]
+    | ObjectMap                   [(Object, Object)]
       -- ^ represents key-value pairs of objects
-    | ObjectExt    {-# UNPACK #-} !Word8 !S.ByteString
+    | ObjectExt    {-# UNPACK #-} Word8 S.ByteString
       -- ^ represents a tuple of an integer and a byte array where
       -- the integer represents type information and the byte array represents data.
     deriving (Read, Show, Eq, Ord, Typeable, Generic)

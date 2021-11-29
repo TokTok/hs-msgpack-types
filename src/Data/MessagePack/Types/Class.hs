@@ -4,6 +4,7 @@
 {-# LANGUAGE FlexibleInstances   #-}
 {-# LANGUAGE IncoherentInstances #-}
 {-# LANGUAGE LambdaCase          #-}
+{-# LANGUAGE StrictData          #-}
 {-# LANGUAGE Trustworthy         #-}
 
 --------------------------------------------------------------------
