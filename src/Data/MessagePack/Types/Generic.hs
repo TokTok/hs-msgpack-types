@@ -7,6 +7,7 @@
 {-# LANGUAGE LambdaCase          #-}
 {-# LANGUAGE Safe                #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE StrictData          #-}
 {-# LANGUAGE TypeOperators       #-}
 module Data.MessagePack.Types.Generic () where
 

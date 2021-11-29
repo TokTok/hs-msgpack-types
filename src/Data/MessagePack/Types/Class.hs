@@ -4,6 +4,7 @@
 {-# LANGUAGE FlexibleInstances   #-}
 {-# LANGUAGE IncoherentInstances #-}
 {-# LANGUAGE LambdaCase          #-}
+{-# LANGUAGE StrictData          #-}
 {-# LANGUAGE Trustworthy         #-}
 
 --------------------------------------------------------------------
@@ -29,8 +30,8 @@ import           Control.Applicative           (Applicative, (<$>), (<*>))
 import           Control.Arrow                 ((***))
 import qualified Data.ByteString               as S
 import qualified Data.ByteString.Lazy          as L
-import           Data.Hashable                 (Hashable)
 import qualified Data.HashMap.Strict           as HashMap
+import           Data.Hashable                 (Hashable)
 import           Data.Int                      (Int16, Int32, Int64, Int8)
 import qualified Data.IntMap.Strict            as IntMap
 import qualified Data.Map                      as Map
@@ -264,7 +265,7 @@ instance (MessagePack k, MessagePack v, Hashable k, Eq k) => MessagePack (HashMa
 instance (MessagePack a1, MessagePack a2) => MessagePack (a1, a2) where
     toObject (a1, a2) = ObjectArray [toObject a1, toObject a2]
     fromObject (ObjectArray [a1, a2]) = (,) <$> fromObject a1 <*> fromObject a2
-    fromObject _ = fail "invalid encoding for tuple"
+    fromObject _                      = fail "invalid encoding for tuple"
 
 instance (MessagePack a1, MessagePack a2, MessagePack a3) => MessagePack (a1, a2, a3) where
     toObject (a1, a2, a3) = ObjectArray [toObject a1, toObject a2, toObject a3]

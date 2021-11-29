@@ -3,6 +3,7 @@
 {-# LANGUAGE LambdaCase          #-}
 {-# LANGUAGE OverloadedStrings   #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE StrictData          #-}
 {-# LANGUAGE Trustworthy         #-}
 module Data.MessagePack.Types.ClassSpec where
 
@@ -99,12 +100,12 @@ spec :: Spec
 spec = do
     describe "GMessagePack" $ do
         it "is a reversible operation"
-            $ withMaxSuccess 100000
+            $ withMaxSuccess 10000
             $ property
             $ \(x :: MyType) -> fromObject (toObject x) `shouldBe` Just x
 
         it "handles arbitrary values"
-            $ withMaxSuccess 100000
+            $ withMaxSuccess 10000
             $ property
             $ \ob -> fromObject ob `shouldSatisfy` \case
                   Just EnumTyCon -> True

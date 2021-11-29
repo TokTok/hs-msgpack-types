@@ -1,4 +1,5 @@
 {-# OPTIONS_GHC -fno-warn-orphans #-}
+{-# LANGUAGE StrictData #-}
 module Data.MessagePack.Types.Instances () where
 
 import           Data.Void                      (Void)
