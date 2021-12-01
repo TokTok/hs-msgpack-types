@@ -30,6 +30,7 @@ jobs:
             ${{ runner.os }}-
       - name: Install dependencies
         run: |
+          if [ -f tools/prepare_third_party.sh ]; then tools/prepare_third_party.sh; fi
           cabal update
           cabal build --only-dependencies --enable-tests --enable-benchmarks --enable-doc all
       - name: Build
@@ -40,6 +41,7 @@ jobs:
         run: cabal haddock --haddock-for-hackage --enable-doc
 
       - name: Publish candidate to Hackage
+        if: ${{ github.event_name == 'push' }}
         env:
           API_TOKEN_HACKAGE: ${{ secrets.API_TOKEN_HACKAGE }}
         run: |
