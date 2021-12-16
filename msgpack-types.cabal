@@ -43,7 +43,6 @@ library
     , containers
     , deepseq
     , hashable
-    , transformers
     , text
     , unordered-containers
     , vector

@@ -20,7 +20,6 @@ haskell_library(
         hazel_library("deepseq"),
         hazel_library("hashable"),
         hazel_library("text"),
-        hazel_library("transformers"),
         hazel_library("unordered-containers"),
         hazel_library("vector"),
     ],
