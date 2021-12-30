@@ -12,7 +12,8 @@ branches:
     protection:
       required_status_checks:
         contexts:
-          - "build"
-          - "cirrus-ci"
+          - "bazel-release"
+          - "build / cabal"
+          - "build / stack"
           - "Codacy Static Code Analysis"
           - "code-review/reviewable"
