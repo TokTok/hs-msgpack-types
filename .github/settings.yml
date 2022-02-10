@@ -13,5 +13,4 @@ branches:
       required_status_checks:
         contexts:
           - "bazel-opt"
-          - "build / cabal"
           - "build / stack"
