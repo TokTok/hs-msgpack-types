@@ -10,6 +10,8 @@ module Data.MessagePack.Types.ClassSpec where
 import           Control.Applicative               (empty, pure, (<$>), (<*>),
                                                     (<|>))
 import           Control.Monad                     (mplus, mzero)
+import           Control.Monad.Validate            (MonadValidate (..),
+                                                    runValidate)
 import qualified Data.ByteString                   as BS
 import qualified Data.ByteString.Lazy              as LBS
 import qualified Data.HashMap.Strict               as HashMap
@@ -19,7 +21,7 @@ import qualified Data.IntMap.Strict                as IntMap
 import qualified Data.Map                          as Map
 import           Data.MessagePack.Types            (Assoc (..),
                                                     MessagePack (..),
-                                                    Object (..))
+                                                    Object (..), errorMessages)
 import qualified Data.Text                         as Text
 import qualified Data.Text.Lazy                    as LText
 import qualified Data.Vector                       as V
@@ -96,21 +98,30 @@ instance (Arbitrary a, Hashable a, Eq a, Arbitrary b) => Arbitrary (HashMap.Hash
     arbitrary = HashMap.fromList <$> arbitrary
 
 
+type Result a = Either [String] a
+
+decode :: MessagePack a => Object -> Result a
+decode = mapLeft errorMessages . runValidate . fromObject
+  where
+    mapLeft f (Left a)  = Left (f a)
+    mapLeft _ (Right b) = Right b
+
+
 spec :: Spec
 spec = do
     describe "GMessagePack" $ do
         it "is a reversible operation"
             $ withMaxSuccess 10000
             $ property
-            $ \(x :: MyType) -> fromObject (toObject x) `shouldBe` Just x
+            $ \(x :: MyType) -> decode (toObject x) `shouldBe` Right x
 
         it "handles arbitrary values"
             $ withMaxSuccess 10000
             $ property
-            $ \ob -> fromObject ob `shouldSatisfy` \case
-                  Just EnumTyCon -> True
-                  Just _         -> True
-                  Nothing        -> True
+            $ \ob -> decode ob `shouldSatisfy` \case
+                  Right EnumTyCon -> True
+                  Right _         -> True
+                  Left _          -> True
 
         it "produces msgpack values as expected" $ do
             toObject (SequenceTyCon 111 "hello")
@@ -124,80 +135,80 @@ spec = do
 
     describe "MessagePack" $ do
         it "handles wrong encodings correctly" $ do
-            (fromObject $ ObjectArray [ObjectWord 1, ObjectWord 222] :: Maybe MyType)
-                `shouldBe` Nothing
-            (fromObject ObjectNil :: Maybe MyType)
-                `shouldBe` Nothing
-            (fromObject $ ObjectArray [ObjectWord 99999] :: Maybe MyType)
-                `shouldBe` Nothing
-            (fromObject $ ObjectArray [] :: Maybe MyType)
-                `shouldBe` Nothing
-            (fromObject ObjectNil :: Maybe Int64)
-                `shouldBe` Nothing
-            (fromObject ObjectNil :: Maybe BS.ByteString)
-                `shouldBe` Nothing
-            (fromObject ObjectNil :: Maybe LBS.ByteString)
-                `shouldBe` Nothing
-            (fromObject ObjectNil :: Maybe Text.Text)
-                `shouldBe` Nothing
-            (fromObject ObjectNil :: Maybe LText.Text)
-                `shouldBe` Nothing
-            (fromObject ObjectNil :: Maybe (V.Vector Int))
-                `shouldBe` Nothing
-            (fromObject ObjectNil :: Maybe (VU.Vector Int))
-                `shouldBe` Nothing
-            (fromObject ObjectNil :: Maybe (VS.Vector Int))
-                `shouldBe` Nothing
-            (fromObject ObjectNil :: Maybe (Assoc [(Int, Int)]))
-                `shouldBe` Nothing
-            (fromObject ObjectNil :: Maybe (Map.Map Int Int))
-                `shouldBe` Nothing
-            (fromObject ObjectNil :: Maybe (IntMap.IntMap Int))
-                `shouldBe` Nothing
-            (fromObject ObjectNil :: Maybe (HashMap.HashMap Int Int))
-                `shouldBe` Nothing
-            (fromObject ObjectNil :: Maybe Word64)
-                `shouldBe` Nothing
-            (fromObject (ObjectArray [ObjectWord 0]) :: Maybe ())
-                `shouldBe` Nothing
-            (fromObject ObjectNil :: Maybe (Int, Int))
-                `shouldBe` Nothing
-            (fromObject ObjectNil :: Maybe (Int, Int, Int))
-                `shouldBe` Nothing
-            (fromObject ObjectNil :: Maybe (Int, Int, Int, Int))
-                `shouldBe` Nothing
-            (fromObject ObjectNil :: Maybe (Int, Int, Int, Int, Int))
-                `shouldBe` Nothing
-            (fromObject ObjectNil :: Maybe (Int, Int, Int, Int, Int, Int))
-                `shouldBe` Nothing
-            (fromObject ObjectNil :: Maybe (Int, Int, Int, Int, Int, Int, Int))
-                `shouldBe` Nothing
-            (fromObject ObjectNil :: Maybe (Int, Int, Int, Int, Int, Int, Int, Int))
-                `shouldBe` Nothing
-            (fromObject ObjectNil :: Maybe (Int, Int, Int, Int, Int, Int, Int, Int, Int))
-                `shouldBe` Nothing
+            (decode $ ObjectArray [ObjectWord 1, ObjectWord 222] :: Result MyType)
+                `shouldBe` Left ["invalid encoding for custom unit type"]
+            (decode ObjectNil :: Result MyType)
+                `shouldBe` Left ["invalid encoding for tuple"]
+            (decode $ ObjectArray [ObjectWord 99999] :: Result MyType)
+                `shouldBe` Left ["invalid encoding for tuple"]
+            (decode $ ObjectArray [] :: Result MyType)
+                `shouldBe` Left ["invalid encoding for tuple"]
+            (decode ObjectNil :: Result Int64)
+                `shouldBe` Left ["invalid encoding for integer type"]
+            (decode ObjectNil :: Result BS.ByteString)
+                `shouldBe` Left ["invalid encoding for ByteString"]
+            (decode ObjectNil :: Result LBS.ByteString)
+                `shouldBe` Left ["invalid encoding for ByteString"]
+            (decode ObjectNil :: Result Text.Text)
+                `shouldBe` Left ["invalid encoding for Text"]
+            (decode ObjectNil :: Result LText.Text)
+                `shouldBe` Left ["invalid encoding for Text"]
+            (decode ObjectNil :: Result (V.Vector Int))
+                `shouldBe` Left ["invalid encoding for Vector"]
+            (decode ObjectNil :: Result (VU.Vector Int))
+                `shouldBe` Left ["invalid encoding for Unboxed Vector"]
+            (decode ObjectNil :: Result (VS.Vector Int))
+                `shouldBe` Left ["invalid encoding for Storable Vector"]
+            (decode ObjectNil :: Result (Assoc [(Int, Int)]))
+                `shouldBe` Left ["invalid encoding for Assoc"]
+            (decode ObjectNil :: Result (Map.Map Int Int))
+                `shouldBe` Left ["invalid encoding for Assoc"]
+            (decode ObjectNil :: Result (IntMap.IntMap Int))
+                `shouldBe` Left ["invalid encoding for Assoc"]
+            (decode ObjectNil :: Result (HashMap.HashMap Int Int))
+                `shouldBe` Left ["invalid encoding for Assoc"]
+            (decode ObjectNil :: Result Word64)
+                `shouldBe` Left ["invalid encoding for integer type"]
+            (decode (ObjectArray [ObjectWord 0]) :: Result ())
+                `shouldBe` Left ["invalid encoding for ()"]
+            (decode ObjectNil :: Result (Int, Int))
+                `shouldBe` Left ["invalid encoding for tuple"]
+            (decode ObjectNil :: Result (Int, Int, Int))
+                `shouldBe` Left ["invalid encoding for tuple"]
+            (decode ObjectNil :: Result (Int, Int, Int, Int))
+                `shouldBe` Left ["invalid encoding for tuple"]
+            (decode ObjectNil :: Result (Int, Int, Int, Int, Int))
+                `shouldBe` Left ["invalid encoding for tuple"]
+            (decode ObjectNil :: Result (Int, Int, Int, Int, Int, Int))
+                `shouldBe` Left ["invalid encoding for tuple"]
+            (decode ObjectNil :: Result (Int, Int, Int, Int, Int, Int, Int))
+                `shouldBe` Left ["invalid encoding for tuple"]
+            (decode ObjectNil :: Result (Int, Int, Int, Int, Int, Int, Int, Int))
+                `shouldBe` Left ["invalid encoding for tuple"]
+            (decode $ ObjectArray [ObjectNil, ObjectNil] :: Result (Int, String))
+                `shouldBe` Left ["invalid encoding for integer type", "invalid encoding for Text"]
 
         it "has a working Read/Show implementation" $ property $ \(x :: Object) ->
             read (show x) `shouldBe` x
 
         it "can parse both nil and [] as ()" $ do
-            (fromObject ObjectNil :: Maybe ())
-                `shouldBe` Just ()
-            (fromObject (ObjectArray []) :: Maybe ())
-                `shouldBe` Just ()
+            (decode ObjectNil :: Result ())
+                `shouldBe` Right ()
+            (decode (ObjectArray []) :: Result ())
+                `shouldBe` Right ()
 
         it "can parse ints and doubles as floats" $ do
-            (fromObject (ObjectDouble 123) :: Maybe Float)
-                `shouldBe` Just 123
-            (fromObject (ObjectWord 123) :: Maybe Float)
-                `shouldBe` Just 123
-            (fromObject (ObjectInt (-123)) :: Maybe Float)
-                `shouldBe` Just (-123)
+            (decode (ObjectDouble 123) :: Result Float)
+                `shouldBe` Right 123
+            (decode (ObjectWord 123) :: Result Float)
+                `shouldBe` Right 123
+            (decode (ObjectInt (-123)) :: Result Float)
+                `shouldBe` Right (-123)
 
         it "can parse ints and floats as doubles" $ do
-            (fromObject (ObjectFloat 123) :: Maybe Double)
-                `shouldBe` Just 123
-            (fromObject (ObjectWord 123) :: Maybe Double)
-                `shouldBe` Just 123
-            (fromObject (ObjectInt (-123)) :: Maybe Double)
-                `shouldBe` Just (-123)
+            (decode (ObjectFloat 123) :: Result Double)
+                `shouldBe` Right 123
+            (decode (ObjectWord 123) :: Result Double)
+                `shouldBe` Right 123
+            (decode (ObjectInt (-123)) :: Result Double)
+                `shouldBe` Right (-123)

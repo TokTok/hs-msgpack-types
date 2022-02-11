@@ -4,6 +4,7 @@
 {-# LANGUAGE FlexibleInstances   #-}
 {-# LANGUAGE IncoherentInstances #-}
 {-# LANGUAGE LambdaCase          #-}
+{-# LANGUAGE OverloadedStrings   #-}
 {-# LANGUAGE StrictData          #-}
 {-# LANGUAGE Trustworthy         #-}
 
@@ -26,26 +27,28 @@ module Data.MessagePack.Types.Class
     , GMessagePack (..)
     ) where
 
-import           Control.Applicative           (Applicative, (<$>), (<*>))
-import           Control.Arrow                 ((***))
-import qualified Data.ByteString               as S
-import qualified Data.ByteString.Lazy          as L
-import qualified Data.HashMap.Strict           as HashMap
-import           Data.Hashable                 (Hashable)
-import           Data.Int                      (Int16, Int32, Int64, Int8)
-import qualified Data.IntMap.Strict            as IntMap
-import qualified Data.Map                      as Map
-import qualified Data.Text                     as T
-import qualified Data.Text.Lazy                as LT
-import qualified Data.Vector                   as V
-import qualified Data.Vector.Storable          as VS
-import qualified Data.Vector.Unboxed           as VU
-import           Data.Word                     (Word, Word16, Word32, Word64,
-                                                Word8)
-import           GHC.Generics                  (Generic, Rep, from, to)
+import           Control.Applicative                (Applicative, (<$>), (<*>))
+import           Control.Arrow                      ((***))
+import           Control.Monad.Validate             (MonadValidate (..))
+import qualified Data.ByteString                    as S
+import qualified Data.ByteString.Lazy               as L
+import qualified Data.HashMap.Strict                as HashMap
+import           Data.Hashable                      (Hashable)
+import           Data.Int                           (Int16, Int32, Int64, Int8)
+import qualified Data.IntMap.Strict                 as IntMap
+import qualified Data.Map                           as Map
+import qualified Data.Text                          as T
+import qualified Data.Text.Lazy                     as LT
+import qualified Data.Vector                        as V
+import qualified Data.Vector.Storable               as VS
+import qualified Data.Vector.Unboxed                as VU
+import           Data.Word                          (Word, Word16, Word32,
+                                                     Word64, Word8)
+import           GHC.Generics                       (Generic, Rep, from, to)
 
-import           Data.MessagePack.Types.Assoc  (Assoc (..))
-import           Data.MessagePack.Types.Object (Object (..))
+import           Data.MessagePack.Types.Assoc       (Assoc (..))
+import           Data.MessagePack.Types.DecodeError (DecodeError)
+import           Data.MessagePack.Types.Object      (Object (..))
 
 
 -- Generic serialisation.
@@ -55,9 +58,7 @@ class GMessagePack f where
     gFromObject
         :: ( Applicative m
            , Monad m
-#if (MIN_VERSION_base(4,13,0))
-           , MonadFail m
-#endif
+           , MonadValidate DecodeError m
            )
         => Object
         -> m (f a)
@@ -68,9 +69,7 @@ class MessagePack a where
     fromObject
         :: ( Applicative m
            , Monad m
-#if (MIN_VERSION_base(4,13,0))
-           , MonadFail m
-#endif
+           , MonadValidate DecodeError m
            )
         => Object
         -> m a
@@ -80,9 +79,7 @@ class MessagePack a where
     default fromObject
         :: ( Applicative m
            , Monad m
-#if (MIN_VERSION_base(4,13,0))
-           , MonadFail m
-#endif
+           , MonadValidate DecodeError m
            , Generic a, GMessagePack (Rep a))
         => Object
         -> m a
@@ -95,9 +92,7 @@ genericToObject = gToObject . from
 genericFromObject
     :: ( Applicative m
        , Monad m
-#if (MIN_VERSION_base(4,13,0))
-       , MonadFail m
-#endif
+       , MonadValidate DecodeError m
        , Generic a
        , GMessagePack (Rep a)
        )
@@ -126,13 +121,13 @@ instance MessagePack Int64 where
     fromObject = \case
         ObjectInt  n -> return n
         ObjectWord n -> return $ toInt n
-        _            -> fail "invalid encoding for integer type"
+        _            -> refute "invalid encoding for integer type"
 
 instance MessagePack Word64 where
     toObject   = ObjectWord
     fromObject = \case
         ObjectWord n -> return n
-        _            -> fail "invalid encoding for integer type"
+        _            -> refute "invalid encoding for integer type"
 
 instance MessagePack Int    where { toObject = toObject . toInt; fromObject o = fromInt <$> fromObject o }
 instance MessagePack Int8   where { toObject = toObject . toInt; fromObject o = fromInt <$> fromObject o }
@@ -156,13 +151,13 @@ instance MessagePack () where
     fromObject = \case
         ObjectNil      -> return ()
         ObjectArray [] -> return ()
-        _              -> fail "invalid encoding for ()"
+        _              -> refute "invalid encoding for ()"
 
 instance MessagePack Bool where
     toObject   = ObjectBool
     fromObject = \case
         ObjectBool b -> return b
-        _            -> fail "invalid encoding for Bool"
+        _            -> refute "invalid encoding for Bool"
 
 instance MessagePack Float where
     toObject   = ObjectFloat
@@ -171,7 +166,7 @@ instance MessagePack Float where
         ObjectWord   n -> return $ fromIntegral n
         ObjectFloat  f -> return f
         ObjectDouble d -> return $ realToFrac d
-        _              -> fail "invalid encoding for Float"
+        _              -> refute "invalid encoding for Float"
 
 instance MessagePack Double where
     toObject   = ObjectDouble
@@ -180,7 +175,7 @@ instance MessagePack Double where
         ObjectWord   n -> return $ fromIntegral n
         ObjectFloat  f -> return $ realToFrac f
         ObjectDouble d -> return d
-        _              -> fail "invalid encoding for Double"
+        _              -> refute "invalid encoding for Double"
 
 -- Because of overlapping instance, this must be above [a].
 -- IncoherentInstances and TypeSynonymInstances are required for this to work.
@@ -195,7 +190,7 @@ instance MessagePack S.ByteString where
     toObject   = ObjectBin
     fromObject = \case
         ObjectBin r -> return r
-        _           -> fail "invalid encoding for ByteString"
+        _           -> refute "invalid encoding for ByteString"
 
 instance MessagePack L.ByteString where
     toObject = ObjectBin . L.toStrict
@@ -205,7 +200,7 @@ instance MessagePack T.Text where
     toObject   = ObjectStr
     fromObject = \case
         ObjectStr s -> return s
-        _           -> fail "invalid encoding for Text"
+        _           -> refute "invalid encoding for Text"
 
 instance MessagePack LT.Text where
     toObject = toObject . LT.toStrict
@@ -218,25 +213,25 @@ instance MessagePack a => MessagePack [a] where
     toObject   = ObjectArray . map toObject
     fromObject = \case
         ObjectArray xs -> mapM fromObject xs
-        _              -> fail "invalid encoding for list"
+        _              -> refute "invalid encoding for list"
 
 instance MessagePack a => MessagePack (V.Vector a) where
     toObject   = ObjectArray . map toObject . V.toList
     fromObject = \case
         ObjectArray o -> V.fromList <$> mapM fromObject o
-        _             -> fail "invalid encoding for Vector"
+        _             -> refute "invalid encoding for Vector"
 
 instance (MessagePack a, VU.Unbox a) => MessagePack (VU.Vector a) where
     toObject   = ObjectArray . map toObject . VU.toList
     fromObject = \case
         ObjectArray o -> VU.fromList <$> mapM fromObject o
-        _             -> fail "invalid encoding for Unboxed Vector"
+        _             -> refute "invalid encoding for Unboxed Vector"
 
 instance (MessagePack a, VS.Storable a) => MessagePack (VS.Vector a) where
     toObject   = ObjectArray . map toObject . VS.toList
     fromObject = \case
         ObjectArray o -> VS.fromList <$> mapM fromObject o
-        _             -> fail "invalid encoding for Storable Vector"
+        _             -> refute "invalid encoding for Storable Vector"
 
 -- Instances for map-like data structures.
 
@@ -245,7 +240,7 @@ instance (MessagePack a, MessagePack b) => MessagePack (Assoc [(a, b)]) where
     fromObject = \case
         ObjectMap xs ->
             Assoc <$> mapM (\(k, v) -> (,) <$> fromObject k <*> fromObject v) xs
-        _ -> fail "invalid encoding for Assoc"
+        _ -> refute "invalid encoding for Assoc"
 
 instance (MessagePack k, MessagePack v, Ord k) => MessagePack (Map.Map k v) where
     toObject = toObject . Assoc . Map.toList
@@ -265,39 +260,39 @@ instance (MessagePack k, MessagePack v, Hashable k, Eq k) => MessagePack (HashMa
 instance (MessagePack a1, MessagePack a2) => MessagePack (a1, a2) where
     toObject (a1, a2) = ObjectArray [toObject a1, toObject a2]
     fromObject (ObjectArray [a1, a2]) = (,) <$> fromObject a1 <*> fromObject a2
-    fromObject _                      = fail "invalid encoding for tuple"
+    fromObject _                      = refute "invalid encoding for tuple"
 
 instance (MessagePack a1, MessagePack a2, MessagePack a3) => MessagePack (a1, a2, a3) where
     toObject (a1, a2, a3) = ObjectArray [toObject a1, toObject a2, toObject a3]
     fromObject (ObjectArray [a1, a2, a3]) = (,,) <$> fromObject a1 <*> fromObject a2 <*> fromObject a3
-    fromObject _ = fail "invalid encoding for tuple"
+    fromObject _ = refute "invalid encoding for tuple"
 
 instance (MessagePack a1, MessagePack a2, MessagePack a3, MessagePack a4) => MessagePack (a1, a2, a3, a4) where
     toObject (a1, a2, a3, a4) = ObjectArray [toObject a1, toObject a2, toObject a3, toObject a4]
     fromObject (ObjectArray [a1, a2, a3, a4]) = (,,,) <$> fromObject a1 <*> fromObject a2 <*> fromObject a3 <*> fromObject a4
-    fromObject _ = fail "invalid encoding for tuple"
+    fromObject _ = refute "invalid encoding for tuple"
 
 instance (MessagePack a1, MessagePack a2, MessagePack a3, MessagePack a4, MessagePack a5) => MessagePack (a1, a2, a3, a4, a5) where
     toObject (a1, a2, a3, a4, a5) = ObjectArray [toObject a1, toObject a2, toObject a3, toObject a4, toObject a5]
     fromObject (ObjectArray [a1, a2, a3, a4, a5]) = (,,,,) <$> fromObject a1 <*> fromObject a2 <*> fromObject a3 <*> fromObject a4 <*> fromObject a5
-    fromObject _ = fail "invalid encoding for tuple"
+    fromObject _ = refute "invalid encoding for tuple"
 
 instance (MessagePack a1, MessagePack a2, MessagePack a3, MessagePack a4, MessagePack a5, MessagePack a6) => MessagePack (a1, a2, a3, a4, a5, a6) where
     toObject (a1, a2, a3, a4, a5, a6) = ObjectArray [toObject a1, toObject a2, toObject a3, toObject a4, toObject a5, toObject a6]
     fromObject (ObjectArray [a1, a2, a3, a4, a5, a6]) = (,,,,,) <$> fromObject a1 <*> fromObject a2 <*> fromObject a3 <*> fromObject a4 <*> fromObject a5 <*> fromObject a6
-    fromObject _ = fail "invalid encoding for tuple"
+    fromObject _ = refute "invalid encoding for tuple"
 
 instance (MessagePack a1, MessagePack a2, MessagePack a3, MessagePack a4, MessagePack a5, MessagePack a6, MessagePack a7) => MessagePack (a1, a2, a3, a4, a5, a6, a7) where
     toObject (a1, a2, a3, a4, a5, a6, a7) = ObjectArray [toObject a1, toObject a2, toObject a3, toObject a4, toObject a5, toObject a6, toObject a7]
     fromObject (ObjectArray [a1, a2, a3, a4, a5, a6, a7]) = (,,,,,,) <$> fromObject a1 <*> fromObject a2 <*> fromObject a3 <*> fromObject a4 <*> fromObject a5 <*> fromObject a6 <*> fromObject a7
-    fromObject _ = fail "invalid encoding for tuple"
+    fromObject _ = refute "invalid encoding for tuple"
 
 instance (MessagePack a1, MessagePack a2, MessagePack a3, MessagePack a4, MessagePack a5, MessagePack a6, MessagePack a7, MessagePack a8) => MessagePack (a1, a2, a3, a4, a5, a6, a7, a8) where
     toObject (a1, a2, a3, a4, a5, a6, a7, a8) = ObjectArray [toObject a1, toObject a2, toObject a3, toObject a4, toObject a5, toObject a6, toObject a7, toObject a8]
     fromObject (ObjectArray [a1, a2, a3, a4, a5, a6, a7, a8]) = (,,,,,,,) <$> fromObject a1 <*> fromObject a2 <*> fromObject a3 <*> fromObject a4 <*> fromObject a5 <*> fromObject a6 <*> fromObject a7 <*> fromObject a8
-    fromObject _ = fail "invalid encoding for tuple"
+    fromObject _ = refute "invalid encoding for tuple"
 
 instance (MessagePack a1, MessagePack a2, MessagePack a3, MessagePack a4, MessagePack a5, MessagePack a6, MessagePack a7, MessagePack a8, MessagePack a9) => MessagePack (a1, a2, a3, a4, a5, a6, a7, a8, a9) where
     toObject (a1, a2, a3, a4, a5, a6, a7, a8, a9) = ObjectArray [toObject a1, toObject a2, toObject a3, toObject a4, toObject a5, toObject a6, toObject a7, toObject a8, toObject a9]
     fromObject (ObjectArray [a1, a2, a3, a4, a5, a6, a7, a8, a9]) = (,,,,,,,,) <$> fromObject a1 <*> fromObject a2 <*> fromObject a3 <*> fromObject a4 <*> fromObject a5 <*> fromObject a6 <*> fromObject a7 <*> fromObject a8 <*> fromObject a9
-    fromObject _ = fail "invalid encoding for tuple"
+    fromObject _ = refute "invalid encoding for tuple"

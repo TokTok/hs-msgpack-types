@@ -5,29 +5,32 @@
 {-# LANGUAGE IncoherentInstances #-}
 {-# LANGUAGE KindSignatures      #-}
 {-# LANGUAGE LambdaCase          #-}
-{-# LANGUAGE Safe                #-}
+{-# LANGUAGE OverloadedStrings   #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE StrictData          #-}
+{-# LANGUAGE Trustworthy         #-}
 {-# LANGUAGE TypeOperators       #-}
 module Data.MessagePack.Types.Generic () where
 
-import           Control.Applicative           (Applicative, (<$>), (<*>))
-import           Control.Monad                 ((>=>))
-import           Data.Bits                     (shiftR)
-import           Data.Word                     (Word64)
+import           Control.Applicative                (Applicative, (<$>), (<*>))
+import           Control.Monad                      ((>=>))
+import           Control.Monad.Validate             (MonadValidate (..))
+import           Data.Bits                          (shiftR)
+import           Data.Word                          (Word64)
 import           GHC.Generics
 
 import           Data.MessagePack.Types.Class
-import           Data.MessagePack.Types.Object (Object (..))
+import           Data.MessagePack.Types.DecodeError (DecodeError)
+import           Data.MessagePack.Types.Object      (Object (..))
 
 instance GMessagePack V1 where
     gToObject = undefined
-    gFromObject _ = fail "can't instantiate void type"
+    gFromObject _ = refute "can't instantiate void type"
 
 instance GMessagePack U1 where
     gToObject U1 = ObjectNil
     gFromObject ObjectNil = return U1
-    gFromObject _         = fail "invalid encoding for custom unit type"
+    gFromObject _         = refute "invalid encoding for custom unit type"
 
 instance (GMessagePack a, GProdPack b) => GMessagePack (a :*: b) where
     gToObject   = toObject . prodToObject
@@ -58,9 +61,7 @@ class GProdPack f where
     prodFromObject
         :: ( Applicative m
            , Monad m
-#if (MIN_VERSION_base(4,13,0))
-           , MonadFail m
-#endif
+           , MonadValidate DecodeError m
            )
         => [Object]
         -> m (f a)
@@ -69,12 +70,12 @@ class GProdPack f where
 instance (GMessagePack a, GProdPack b) => GProdPack (a :*: b) where
     prodToObject (a :*: b) = gToObject a : prodToObject b
     prodFromObject (a : b) = (:*:) <$> gFromObject a <*> prodFromObject b
-    prodFromObject []      = fail "invalid encoding for product type"
+    prodFromObject []      = refute "invalid encoding for product type"
 
 instance GMessagePack a => GProdPack (M1 t c a) where
     prodToObject (M1 x) = [gToObject x]
     prodFromObject [x] = M1 <$> gFromObject x
-    prodFromObject _   = fail "invalid encoding for product type"
+    prodFromObject _   = refute "invalid encoding for product type"
 
 
 -- Sum type packing.
@@ -82,26 +83,22 @@ instance GMessagePack a => GProdPack (M1 t c a) where
 checkSumFromObject0
     :: ( Applicative m
        , Monad m
-#if (MIN_VERSION_base(4,13,0))
-       , MonadFail m
-#endif
+       , MonadValidate DecodeError m
        )
     => (GSumPack f) => Word64 -> Word64 -> m (f a)
 checkSumFromObject0 size code | code < size = sumFromObject code size ObjectNil
-                              | otherwise = fail "invalid encoding for sum type"
+                              | otherwise = refute "invalid encoding for sum type"
 
 
 checkSumFromObject
     :: ( Applicative m
        , Monad m
-#if (MIN_VERSION_base(4,13,0))
-       , MonadFail m
-#endif
+       , MonadValidate DecodeError m
        )
     => (GSumPack f) => Word64 -> Word64 -> Object -> m (f a)
 checkSumFromObject size code x
     | code < size = sumFromObject code size x
-    | otherwise   = fail "invalid encoding for sum type"
+    | otherwise   = refute "invalid encoding for sum type"
 
 
 class GSumPack f where
@@ -109,9 +106,7 @@ class GSumPack f where
     sumFromObject
         :: ( Applicative m
            , Monad m
-#if (MIN_VERSION_base(4,13,0))
-           , MonadFail m
-#endif
+           , MonadValidate DecodeError m
            )
         => Word64
         -> Word64
