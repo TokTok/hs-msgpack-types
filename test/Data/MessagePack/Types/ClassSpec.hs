@@ -14,8 +14,8 @@ import           Control.Monad.Validate            (MonadValidate (..),
                                                     runValidate)
 import qualified Data.ByteString                   as BS
 import qualified Data.ByteString.Lazy              as LBS
-import           Data.Hashable                     (Hashable)
 import qualified Data.HashMap.Strict               as HashMap
+import           Data.Hashable                     (Hashable)
 import           Data.Int                          (Int16, Int32, Int64, Int8)
 import qualified Data.IntMap.Strict                as IntMap
 import qualified Data.Map                          as Map
@@ -103,7 +103,7 @@ type Result a = Either [String] a
 decode :: MessagePack a => Object -> Result a
 decode = mapLeft errorMessages . runValidate . fromObject
   where
-    mapLeft f (Left a) = Left (f a)
+    mapLeft f (Left a)  = Left (f a)
     mapLeft _ (Right b) = Right b
 
 
