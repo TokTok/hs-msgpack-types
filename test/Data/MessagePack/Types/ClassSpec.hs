@@ -21,7 +21,8 @@ import qualified Data.IntMap.Strict                as IntMap
 import qualified Data.Map                          as Map
 import           Data.MessagePack.Types            (Assoc (..),
                                                     MessagePack (..),
-                                                    Object (..), errorMessages)
+                                                    Object (..), defaultConfig,
+                                                    errorMessages)
 import qualified Data.Text                         as Text
 import qualified Data.Text.Lazy                    as LText
 import qualified Data.Vector                       as V
@@ -38,7 +39,7 @@ import           Test.QuickCheck                   (Arbitrary (..),
 import           Test.QuickCheck.Arbitrary.Generic (genericArbitrary)
 
 data MyType
-    = SequenceTyCon Int String
+    = SequenceTyCon Int String Int Int
     | EnumTyCon
     | RecordTyCon { intValue :: Int }
     | F01 Int8
@@ -101,7 +102,7 @@ instance (Arbitrary a, Hashable a, Eq a, Arbitrary b) => Arbitrary (HashMap.Hash
 type Result a = Either [String] a
 
 decode :: MessagePack a => Object -> Result a
-decode = mapLeft errorMessages . runValidate . fromObject
+decode = mapLeft errorMessages . runValidate . fromObjectWith defaultConfig
   where
     mapLeft f (Left a)  = Left (f a)
     mapLeft _ (Right b) = Right b
@@ -113,7 +114,7 @@ spec = do
         it "is a reversible operation"
             $ withMaxSuccess 10000
             $ property
-            $ \(x :: MyType) -> decode (toObject x) `shouldBe` Right x
+            $ \(x :: MyType) -> decode (toObject defaultConfig x) `shouldBe` Right x
 
         it "handles arbitrary values"
             $ withMaxSuccess 10000
@@ -124,13 +125,13 @@ spec = do
                   Left _          -> True
 
         it "produces msgpack values as expected" $ do
-            toObject (SequenceTyCon 111 "hello")
+            toObject defaultConfig (SequenceTyCon 111 "hello" 2 3)
                 `shouldBe` ObjectArray
                                [ ObjectWord 0
-                               , ObjectArray [ObjectWord 111, ObjectStr "hello"]
+                               , ObjectArray [ObjectWord 111, ObjectStr "hello", ObjectWord 2, ObjectWord 3]
                                ]
-            toObject EnumTyCon `shouldBe` ObjectWord 1
-            toObject (RecordTyCon 222)
+            toObject defaultConfig EnumTyCon `shouldBe` ObjectWord 1
+            toObject defaultConfig (RecordTyCon 222)
                 `shouldBe` ObjectArray [ObjectWord 2, ObjectWord 222]
 
     describe "MessagePack" $ do
