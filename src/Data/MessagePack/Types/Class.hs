@@ -25,6 +25,8 @@
 module Data.MessagePack.Types.Class
     ( MessagePack (..)
     , GMessagePack (..)
+    , Config
+    , defaultConfig
     ) where
 
 import           Control.Applicative                (Applicative, (<$>), (<*>))
@@ -51,43 +53,52 @@ import           Data.MessagePack.Types.DecodeError (DecodeError)
 import           Data.MessagePack.Types.Object      (Object (..))
 
 
+data Config = Config
+
+defaultConfig :: Config
+defaultConfig = Config
+
+
 -- Generic serialisation.
 
 class GMessagePack f where
-    gToObject :: f a -> Object
+    gToObject :: Config -> f a -> Object
     gFromObject
         :: ( Applicative m
            , Monad m
            , MonadValidate DecodeError m
            )
-        => Object
+        => Config
+        -> Object
         -> m (f a)
 
 
 class MessagePack a where
-    toObject :: a -> Object
-    fromObject
+    toObject :: Config -> a -> Object
+    fromObjectWith
         :: ( Applicative m
            , Monad m
            , MonadValidate DecodeError m
            )
-        => Object
+        => Config
+        -> Object
         -> m a
 
-    default toObject :: (Generic a, GMessagePack (Rep a)) => a -> Object
+    default toObject :: (Generic a, GMessagePack (Rep a)) => Config -> a -> Object
     toObject = genericToObject
-    default fromObject
+    default fromObjectWith
         :: ( Applicative m
            , Monad m
            , MonadValidate DecodeError m
            , Generic a, GMessagePack (Rep a))
-        => Object
+        => Config
+        -> Object
         -> m a
-    fromObject = genericFromObject
+    fromObjectWith = genericFromObject
 
 
-genericToObject :: (Generic a, GMessagePack (Rep a)) => a -> Object
-genericToObject = gToObject . from
+genericToObject :: (Generic a, GMessagePack (Rep a)) => Config -> a -> Object
+genericToObject cfg = gToObject cfg . from
 
 genericFromObject
     :: ( Applicative m
@@ -96,9 +107,10 @@ genericFromObject
        , Generic a
        , GMessagePack (Rep a)
        )
-    => Object
+    => Config
+    -> Object
     -> m a
-genericFromObject x = to <$> gFromObject x
+genericFromObject cfg x = to <$> gFromObject cfg x
 
 
 -- Instances for integral types (Int etc.).
@@ -116,52 +128,53 @@ fromWord :: Integral a => Word64 -> a
 fromWord = fromIntegral
 
 instance MessagePack Int64 where
-    toObject i | i < 0     = ObjectInt i
-               | otherwise = ObjectWord $ toWord i
-    fromObject = \case
+    toObject _ i
+      | i < 0     = ObjectInt i
+      | otherwise = ObjectWord $ toWord i
+    fromObjectWith _ = \case
         ObjectInt  n -> return n
         ObjectWord n -> return $ toInt n
         _            -> refute "invalid encoding for integer type"
 
 instance MessagePack Word64 where
-    toObject   = ObjectWord
-    fromObject = \case
+    toObject _ = ObjectWord
+    fromObjectWith _ = \case
         ObjectWord n -> return n
         _            -> refute "invalid encoding for integer type"
 
-instance MessagePack Int    where { toObject = toObject . toInt; fromObject o = fromInt <$> fromObject o }
-instance MessagePack Int8   where { toObject = toObject . toInt; fromObject o = fromInt <$> fromObject o }
-instance MessagePack Int16  where { toObject = toObject . toInt; fromObject o = fromInt <$> fromObject o }
-instance MessagePack Int32  where { toObject = toObject . toInt; fromObject o = fromInt <$> fromObject o }
+instance MessagePack Int    where { toObject cfg = toObject cfg . toInt; fromObjectWith cfg o = fromInt <$> fromObjectWith cfg o }
+instance MessagePack Int8   where { toObject cfg = toObject cfg . toInt; fromObjectWith cfg o = fromInt <$> fromObjectWith cfg o }
+instance MessagePack Int16  where { toObject cfg = toObject cfg . toInt; fromObjectWith cfg o = fromInt <$> fromObjectWith cfg o }
+instance MessagePack Int32  where { toObject cfg = toObject cfg . toInt; fromObjectWith cfg o = fromInt <$> fromObjectWith cfg o }
 
-instance MessagePack Word   where { toObject = toObject . toWord; fromObject o = fromWord <$> fromObject o }
-instance MessagePack Word8  where { toObject = toObject . toWord; fromObject o = fromWord <$> fromObject o }
-instance MessagePack Word16 where { toObject = toObject . toWord; fromObject o = fromWord <$> fromObject o }
-instance MessagePack Word32 where { toObject = toObject . toWord; fromObject o = fromWord <$> fromObject o }
+instance MessagePack Word   where { toObject cfg = toObject cfg . toWord; fromObjectWith cfg o = fromWord <$> fromObjectWith cfg o }
+instance MessagePack Word8  where { toObject cfg = toObject cfg . toWord; fromObjectWith cfg o = fromWord <$> fromObjectWith cfg o }
+instance MessagePack Word16 where { toObject cfg = toObject cfg . toWord; fromObjectWith cfg o = fromWord <$> fromObjectWith cfg o }
+instance MessagePack Word32 where { toObject cfg = toObject cfg . toWord; fromObjectWith cfg o = fromWord <$> fromObjectWith cfg o }
 
 
 -- Core instances.
 
 instance MessagePack Object where
-    toObject   = id
-    fromObject = return
+    toObject _ = id
+    fromObjectWith _ = return
 
 instance MessagePack () where
-    toObject _ = ObjectNil
-    fromObject = \case
+    toObject _ _ = ObjectNil
+    fromObjectWith _ = \case
         ObjectNil      -> return ()
         ObjectArray [] -> return ()
         _              -> refute "invalid encoding for ()"
 
 instance MessagePack Bool where
-    toObject   = ObjectBool
-    fromObject = \case
+    toObject _ = ObjectBool
+    fromObjectWith _ = \case
         ObjectBool b -> return b
         _            -> refute "invalid encoding for Bool"
 
 instance MessagePack Float where
-    toObject   = ObjectFloat
-    fromObject = \case
+    toObject _ = ObjectFloat
+    fromObjectWith _ = \case
         ObjectInt    n -> return $ fromIntegral n
         ObjectWord   n -> return $ fromIntegral n
         ObjectFloat  f -> return f
@@ -169,8 +182,8 @@ instance MessagePack Float where
         _              -> refute "invalid encoding for Float"
 
 instance MessagePack Double where
-    toObject   = ObjectDouble
-    fromObject = \case
+    toObject _ = ObjectDouble
+    fromObjectWith _ = \case
         ObjectInt    n -> return $ fromIntegral n
         ObjectWord   n -> return $ fromIntegral n
         ObjectFloat  f -> return $ realToFrac f
@@ -180,119 +193,119 @@ instance MessagePack Double where
 -- Because of overlapping instance, this must be above [a].
 -- IncoherentInstances and TypeSynonymInstances are required for this to work.
 instance MessagePack String where
-    toObject = toObject . T.pack
-    fromObject obj = T.unpack <$> fromObject obj
+    toObject cfg = toObject cfg . T.pack
+    fromObjectWith cfg obj = T.unpack <$> fromObjectWith cfg obj
 
 
 -- Instances for binary and UTF-8 encoded string.
 
 instance MessagePack S.ByteString where
-    toObject   = ObjectBin
-    fromObject = \case
+    toObject _ = ObjectBin
+    fromObjectWith _ = \case
         ObjectBin r -> return r
         _           -> refute "invalid encoding for ByteString"
 
 instance MessagePack L.ByteString where
-    toObject = ObjectBin . L.toStrict
-    fromObject obj = L.fromStrict <$> fromObject obj
+    toObject _ = ObjectBin . L.toStrict
+    fromObjectWith cfg obj = L.fromStrict <$> fromObjectWith cfg obj
 
 instance MessagePack T.Text where
-    toObject   = ObjectStr
-    fromObject = \case
+    toObject _ = ObjectStr
+    fromObjectWith _ = \case
         ObjectStr s -> return s
         _           -> refute "invalid encoding for Text"
 
 instance MessagePack LT.Text where
-    toObject = toObject . LT.toStrict
-    fromObject obj = LT.fromStrict <$> fromObject obj
+    toObject cfg = toObject cfg . LT.toStrict
+    fromObjectWith cfg obj = LT.fromStrict <$> fromObjectWith cfg obj
 
 
 -- Instances for array-like data structures.
 
 instance MessagePack a => MessagePack [a] where
-    toObject   = ObjectArray . map toObject
-    fromObject = \case
-        ObjectArray xs -> mapM fromObject xs
+    toObject cfg = ObjectArray . map (toObject cfg)
+    fromObjectWith cfg = \case
+        ObjectArray xs -> mapM (fromObjectWith cfg) xs
         _              -> refute "invalid encoding for list"
 
 instance MessagePack a => MessagePack (V.Vector a) where
-    toObject   = ObjectArray . map toObject . V.toList
-    fromObject = \case
-        ObjectArray o -> V.fromList <$> mapM fromObject o
+    toObject cfg = ObjectArray . map (toObject cfg) . V.toList
+    fromObjectWith cfg = \case
+        ObjectArray o -> V.fromList <$> mapM (fromObjectWith cfg) o
         _             -> refute "invalid encoding for Vector"
 
 instance (MessagePack a, VU.Unbox a) => MessagePack (VU.Vector a) where
-    toObject   = ObjectArray . map toObject . VU.toList
-    fromObject = \case
-        ObjectArray o -> VU.fromList <$> mapM fromObject o
+    toObject cfg = ObjectArray . map (toObject cfg) . VU.toList
+    fromObjectWith cfg = \case
+        ObjectArray o -> VU.fromList <$> mapM (fromObjectWith cfg) o
         _             -> refute "invalid encoding for Unboxed Vector"
 
 instance (MessagePack a, VS.Storable a) => MessagePack (VS.Vector a) where
-    toObject   = ObjectArray . map toObject . VS.toList
-    fromObject = \case
-        ObjectArray o -> VS.fromList <$> mapM fromObject o
+    toObject cfg = ObjectArray . map (toObject cfg) . VS.toList
+    fromObjectWith cfg = \case
+        ObjectArray o -> VS.fromList <$> mapM (fromObjectWith cfg) o
         _             -> refute "invalid encoding for Storable Vector"
 
 -- Instances for map-like data structures.
 
 instance (MessagePack a, MessagePack b) => MessagePack (Assoc [(a, b)]) where
-    toObject (Assoc xs) = ObjectMap $ map (toObject *** toObject) xs
-    fromObject = \case
+    toObject cfg (Assoc xs) = ObjectMap $ map (toObject cfg *** toObject cfg) xs
+    fromObjectWith cfg = \case
         ObjectMap xs ->
-            Assoc <$> mapM (\(k, v) -> (,) <$> fromObject k <*> fromObject v) xs
+            Assoc <$> mapM (\(k, v) -> (,) <$> fromObjectWith cfg k <*> fromObjectWith cfg v) xs
         _ -> refute "invalid encoding for Assoc"
 
 instance (MessagePack k, MessagePack v, Ord k) => MessagePack (Map.Map k v) where
-    toObject = toObject . Assoc . Map.toList
-    fromObject obj = Map.fromList . unAssoc <$> fromObject obj
+    toObject cfg = toObject cfg . Assoc . Map.toList
+    fromObjectWith cfg obj = Map.fromList . unAssoc <$> fromObjectWith cfg obj
 
 instance MessagePack v => MessagePack (IntMap.IntMap v) where
-    toObject = toObject . Assoc . IntMap.toList
-    fromObject obj = IntMap.fromList . unAssoc <$> fromObject obj
+    toObject cfg = toObject cfg . Assoc . IntMap.toList
+    fromObjectWith cfg obj = IntMap.fromList . unAssoc <$> fromObjectWith cfg obj
 
 instance (MessagePack k, MessagePack v, Hashable k, Eq k) => MessagePack (HashMap.HashMap k v) where
-    toObject = toObject . Assoc . HashMap.toList
-    fromObject obj = HashMap.fromList . unAssoc <$> fromObject obj
+    toObject cfg = toObject cfg . Assoc . HashMap.toList
+    fromObjectWith cfg obj = HashMap.fromList . unAssoc <$> fromObjectWith cfg obj
 
 
 -- Instances for various tuple arities.
 
 instance (MessagePack a1, MessagePack a2) => MessagePack (a1, a2) where
-    toObject (a1, a2) = ObjectArray [toObject a1, toObject a2]
-    fromObject (ObjectArray [a1, a2]) = (,) <$> fromObject a1 <*> fromObject a2
-    fromObject _                      = refute "invalid encoding for tuple"
+    toObject cfg (a1, a2) = ObjectArray [toObject cfg a1, toObject cfg a2]
+    fromObjectWith cfg (ObjectArray [a1, a2]) = (,) <$> fromObjectWith cfg a1 <*> fromObjectWith cfg a2
+    fromObjectWith _ _                        = refute "invalid encoding for tuple"
 
 instance (MessagePack a1, MessagePack a2, MessagePack a3) => MessagePack (a1, a2, a3) where
-    toObject (a1, a2, a3) = ObjectArray [toObject a1, toObject a2, toObject a3]
-    fromObject (ObjectArray [a1, a2, a3]) = (,,) <$> fromObject a1 <*> fromObject a2 <*> fromObject a3
-    fromObject _ = refute "invalid encoding for tuple"
+    toObject cfg (a1, a2, a3) = ObjectArray [toObject cfg a1, toObject cfg a2, toObject cfg a3]
+    fromObjectWith cfg (ObjectArray [a1, a2, a3]) = (,,) <$> fromObjectWith cfg a1 <*> fromObjectWith cfg a2 <*> fromObjectWith cfg a3
+    fromObjectWith _ _ = refute "invalid encoding for tuple"
 
 instance (MessagePack a1, MessagePack a2, MessagePack a3, MessagePack a4) => MessagePack (a1, a2, a3, a4) where
-    toObject (a1, a2, a3, a4) = ObjectArray [toObject a1, toObject a2, toObject a3, toObject a4]
-    fromObject (ObjectArray [a1, a2, a3, a4]) = (,,,) <$> fromObject a1 <*> fromObject a2 <*> fromObject a3 <*> fromObject a4
-    fromObject _ = refute "invalid encoding for tuple"
+    toObject cfg (a1, a2, a3, a4) = ObjectArray [toObject cfg a1, toObject cfg a2, toObject cfg a3, toObject cfg a4]
+    fromObjectWith cfg (ObjectArray [a1, a2, a3, a4]) = (,,,) <$> fromObjectWith cfg a1 <*> fromObjectWith cfg a2 <*> fromObjectWith cfg a3 <*> fromObjectWith cfg a4
+    fromObjectWith _ _ = refute "invalid encoding for tuple"
 
 instance (MessagePack a1, MessagePack a2, MessagePack a3, MessagePack a4, MessagePack a5) => MessagePack (a1, a2, a3, a4, a5) where
-    toObject (a1, a2, a3, a4, a5) = ObjectArray [toObject a1, toObject a2, toObject a3, toObject a4, toObject a5]
-    fromObject (ObjectArray [a1, a2, a3, a4, a5]) = (,,,,) <$> fromObject a1 <*> fromObject a2 <*> fromObject a3 <*> fromObject a4 <*> fromObject a5
-    fromObject _ = refute "invalid encoding for tuple"
+    toObject cfg (a1, a2, a3, a4, a5) = ObjectArray [toObject cfg a1, toObject cfg a2, toObject cfg a3, toObject cfg a4, toObject cfg a5]
+    fromObjectWith cfg (ObjectArray [a1, a2, a3, a4, a5]) = (,,,,) <$> fromObjectWith cfg a1 <*> fromObjectWith cfg a2 <*> fromObjectWith cfg a3 <*> fromObjectWith cfg a4 <*> fromObjectWith cfg a5
+    fromObjectWith _ _ = refute "invalid encoding for tuple"
 
 instance (MessagePack a1, MessagePack a2, MessagePack a3, MessagePack a4, MessagePack a5, MessagePack a6) => MessagePack (a1, a2, a3, a4, a5, a6) where
-    toObject (a1, a2, a3, a4, a5, a6) = ObjectArray [toObject a1, toObject a2, toObject a3, toObject a4, toObject a5, toObject a6]
-    fromObject (ObjectArray [a1, a2, a3, a4, a5, a6]) = (,,,,,) <$> fromObject a1 <*> fromObject a2 <*> fromObject a3 <*> fromObject a4 <*> fromObject a5 <*> fromObject a6
-    fromObject _ = refute "invalid encoding for tuple"
+    toObject cfg (a1, a2, a3, a4, a5, a6) = ObjectArray [toObject cfg a1, toObject cfg a2, toObject cfg a3, toObject cfg a4, toObject cfg a5, toObject cfg a6]
+    fromObjectWith cfg (ObjectArray [a1, a2, a3, a4, a5, a6]) = (,,,,,) <$> fromObjectWith cfg a1 <*> fromObjectWith cfg a2 <*> fromObjectWith cfg a3 <*> fromObjectWith cfg a4 <*> fromObjectWith cfg a5 <*> fromObjectWith cfg a6
+    fromObjectWith _ _ = refute "invalid encoding for tuple"
 
 instance (MessagePack a1, MessagePack a2, MessagePack a3, MessagePack a4, MessagePack a5, MessagePack a6, MessagePack a7) => MessagePack (a1, a2, a3, a4, a5, a6, a7) where
-    toObject (a1, a2, a3, a4, a5, a6, a7) = ObjectArray [toObject a1, toObject a2, toObject a3, toObject a4, toObject a5, toObject a6, toObject a7]
-    fromObject (ObjectArray [a1, a2, a3, a4, a5, a6, a7]) = (,,,,,,) <$> fromObject a1 <*> fromObject a2 <*> fromObject a3 <*> fromObject a4 <*> fromObject a5 <*> fromObject a6 <*> fromObject a7
-    fromObject _ = refute "invalid encoding for tuple"
+    toObject cfg (a1, a2, a3, a4, a5, a6, a7) = ObjectArray [toObject cfg a1, toObject cfg a2, toObject cfg a3, toObject cfg a4, toObject cfg a5, toObject cfg a6, toObject cfg a7]
+    fromObjectWith cfg (ObjectArray [a1, a2, a3, a4, a5, a6, a7]) = (,,,,,,) <$> fromObjectWith cfg a1 <*> fromObjectWith cfg a2 <*> fromObjectWith cfg a3 <*> fromObjectWith cfg a4 <*> fromObjectWith cfg a5 <*> fromObjectWith cfg a6 <*> fromObjectWith cfg a7
+    fromObjectWith _ _ = refute "invalid encoding for tuple"
 
 instance (MessagePack a1, MessagePack a2, MessagePack a3, MessagePack a4, MessagePack a5, MessagePack a6, MessagePack a7, MessagePack a8) => MessagePack (a1, a2, a3, a4, a5, a6, a7, a8) where
-    toObject (a1, a2, a3, a4, a5, a6, a7, a8) = ObjectArray [toObject a1, toObject a2, toObject a3, toObject a4, toObject a5, toObject a6, toObject a7, toObject a8]
-    fromObject (ObjectArray [a1, a2, a3, a4, a5, a6, a7, a8]) = (,,,,,,,) <$> fromObject a1 <*> fromObject a2 <*> fromObject a3 <*> fromObject a4 <*> fromObject a5 <*> fromObject a6 <*> fromObject a7 <*> fromObject a8
-    fromObject _ = refute "invalid encoding for tuple"
+    toObject cfg (a1, a2, a3, a4, a5, a6, a7, a8) = ObjectArray [toObject cfg a1, toObject cfg a2, toObject cfg a3, toObject cfg a4, toObject cfg a5, toObject cfg a6, toObject cfg a7, toObject cfg a8]
+    fromObjectWith cfg (ObjectArray [a1, a2, a3, a4, a5, a6, a7, a8]) = (,,,,,,,) <$> fromObjectWith cfg a1 <*> fromObjectWith cfg a2 <*> fromObjectWith cfg a3 <*> fromObjectWith cfg a4 <*> fromObjectWith cfg a5 <*> fromObjectWith cfg a6 <*> fromObjectWith cfg a7 <*> fromObjectWith cfg a8
+    fromObjectWith _ _ = refute "invalid encoding for tuple"
 
 instance (MessagePack a1, MessagePack a2, MessagePack a3, MessagePack a4, MessagePack a5, MessagePack a6, MessagePack a7, MessagePack a8, MessagePack a9) => MessagePack (a1, a2, a3, a4, a5, a6, a7, a8, a9) where
-    toObject (a1, a2, a3, a4, a5, a6, a7, a8, a9) = ObjectArray [toObject a1, toObject a2, toObject a3, toObject a4, toObject a5, toObject a6, toObject a7, toObject a8, toObject a9]
-    fromObject (ObjectArray [a1, a2, a3, a4, a5, a6, a7, a8, a9]) = (,,,,,,,,) <$> fromObject a1 <*> fromObject a2 <*> fromObject a3 <*> fromObject a4 <*> fromObject a5 <*> fromObject a6 <*> fromObject a7 <*> fromObject a8 <*> fromObject a9
-    fromObject _ = refute "invalid encoding for tuple"
+    toObject cfg (a1, a2, a3, a4, a5, a6, a7, a8, a9) = ObjectArray [toObject cfg a1, toObject cfg a2, toObject cfg a3, toObject cfg a4, toObject cfg a5, toObject cfg a6, toObject cfg a7, toObject cfg a8, toObject cfg a9]
+    fromObjectWith cfg (ObjectArray [a1, a2, a3, a4, a5, a6, a7, a8, a9]) = (,,,,,,,,) <$> fromObjectWith cfg a1 <*> fromObjectWith cfg a2 <*> fromObjectWith cfg a3 <*> fromObjectWith cfg a4 <*> fromObjectWith cfg a5 <*> fromObjectWith cfg a6 <*> fromObjectWith cfg a7 <*> fromObjectWith cfg a8 <*> fromObjectWith cfg a9
+    fromObjectWith _ _ = refute "invalid encoding for tuple"

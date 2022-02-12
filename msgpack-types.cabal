@@ -45,6 +45,7 @@ library
     , hashable
     , monad-validate
     , text
+    , transformers
     , unordered-containers
     , vector
 

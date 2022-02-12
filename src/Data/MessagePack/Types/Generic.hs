@@ -1,20 +1,24 @@
-{-# OPTIONS_GHC -fno-warn-orphans #-}
-{-# LANGUAGE CPP                 #-}
-{-# LANGUAGE FlexibleContexts    #-}
-{-# LANGUAGE FlexibleInstances   #-}
-{-# LANGUAGE IncoherentInstances #-}
-{-# LANGUAGE KindSignatures      #-}
-{-# LANGUAGE LambdaCase          #-}
-{-# LANGUAGE OverloadedStrings   #-}
-{-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE StrictData          #-}
-{-# LANGUAGE Trustworthy         #-}
-{-# LANGUAGE TypeOperators       #-}
+{-# OPTIONS_GHC -Wno-orphans #-}
+{-# OPTIONS_GHC -Wno-simplifiable-class-constraints #-}
+{-# LANGUAGE CPP                  #-}
+{-# LANGUAGE FlexibleContexts     #-}
+{-# LANGUAGE FlexibleInstances    #-}
+{-# LANGUAGE IncoherentInstances  #-}
+{-# LANGUAGE KindSignatures       #-}
+{-# LANGUAGE LambdaCase           #-}
+{-# LANGUAGE OverloadedStrings    #-}
+{-# LANGUAGE Trustworthy          #-}
+{-# LANGUAGE ScopedTypeVariables  #-}
+{-# LANGUAGE StrictData           #-}
+{-# LANGUAGE TypeOperators        #-}
+{-# LANGUAGE UndecidableInstances #-}
 module Data.MessagePack.Types.Generic () where
 
 import           Control.Applicative                (Applicative, (<$>), (<*>))
 import           Control.Monad                      ((>=>))
-import           Control.Monad.Validate             (MonadValidate (..))
+import           Control.Monad.Validate             (MonadValidate, refute)
+import           Control.Monad.Trans.State.Strict   (StateT, evalStateT, get,
+                                                     put)
 import           Data.Bits                          (shiftR)
 import           Data.Word                          (Word64)
 import           GHC.Generics
@@ -25,57 +29,65 @@ import           Data.MessagePack.Types.Object      (Object (..))
 
 instance GMessagePack V1 where
     gToObject = undefined
-    gFromObject _ = refute "can't instantiate void type"
+    gFromObject _ _ = refute "can't instantiate void type"
 
 instance GMessagePack U1 where
-    gToObject U1 = ObjectNil
-    gFromObject ObjectNil = return U1
-    gFromObject _         = refute "invalid encoding for custom unit type"
+    gToObject _ U1 = ObjectNil
+    gFromObject _ ObjectNil = return U1
+    gFromObject _ _         = refute "invalid encoding for custom unit type"
 
-instance (GMessagePack a, GProdPack b) => GMessagePack (a :*: b) where
-    gToObject   = toObject . prodToObject
-    gFromObject = fromObject >=> prodFromObject
+instance GProdPack a => GMessagePack a where
+    gToObject cfg = toObject cfg . prodToObject cfg
+    gFromObject cfg o = do
+        list <- fromObjectWith cfg o
+        evalStateT (prodFromObject cfg) list
 
 instance (GSumPack a, GSumPack b, SumSize a, SumSize b) => GMessagePack (a :+: b) where
-    gToObject = sumToObject 0 size
+    gToObject cfg = sumToObject cfg 0 size
         where size = unTagged (sumSize :: Tagged (a :+: b) Word64)
 
-    gFromObject = \case
-        ObjectWord code -> checkSumFromObject0 size (fromIntegral code)
-        o               -> fromObject o >>= uncurry (checkSumFromObject size)
+    gFromObject cfg = \case
+        ObjectWord code -> checkSumFromObject0 cfg size (fromIntegral code)
+        o               -> fromObjectWith cfg o >>= uncurry (checkSumFromObject cfg size)
         where size = unTagged (sumSize :: Tagged (a :+: b) Word64)
 
 instance GMessagePack a => GMessagePack (M1 t c a) where
-    gToObject (M1 x) = gToObject x
-    gFromObject x = M1 <$> gFromObject x
+    gToObject cfg (M1 x) = gToObject cfg x
+    gFromObject cfg x = M1 <$> gFromObject cfg x
 
 instance MessagePack a => GMessagePack (K1 i a) where
-    gToObject (K1 x) = toObject x
-    gFromObject o = K1 <$> fromObject o
+    gToObject cfg (K1 x) = toObject cfg x
+    gFromObject cfg o = K1 <$> fromObjectWith cfg o
 
 
 -- Product type packing.
 
 class GProdPack f where
-    prodToObject :: f a -> [Object]
+    prodToObject :: Config -> f a -> [Object]
     prodFromObject
         :: ( Applicative m
            , Monad m
            , MonadValidate DecodeError m
            )
-        => [Object]
-        -> m (f a)
+        => Config -> StateT [Object] m (f a)
 
 
-instance (GMessagePack a, GProdPack b) => GProdPack (a :*: b) where
-    prodToObject (a :*: b) = gToObject a : prodToObject b
-    prodFromObject (a : b) = (:*:) <$> gFromObject a <*> prodFromObject b
-    prodFromObject []      = refute "invalid encoding for product type"
+instance (GProdPack a, GProdPack b) => GProdPack (a :*: b) where
+    prodToObject cfg (a :*: b) = prodToObject cfg a ++ prodToObject cfg b
+    prodFromObject cfg = do
+        f <- prodFromObject cfg
+        g <- prodFromObject cfg
+        pure $ f :*: g
 
 instance GMessagePack a => GProdPack (M1 t c a) where
-    prodToObject (M1 x) = [gToObject x]
-    prodFromObject [x] = M1 <$> gFromObject x
-    prodFromObject _   = refute "invalid encoding for product type"
+    prodToObject cfg (M1 x) = [gToObject cfg x]
+    prodFromObject cfg = do
+        objs <- get
+        case objs of
+            (x:xs) -> do
+                put xs
+                M1 <$> gFromObject cfg x
+            _      -> refute "invalid encoding for product type"
 
 
 -- Sum type packing.
@@ -85,9 +97,10 @@ checkSumFromObject0
        , Monad m
        , MonadValidate DecodeError m
        )
-    => (GSumPack f) => Word64 -> Word64 -> m (f a)
-checkSumFromObject0 size code | code < size = sumFromObject code size ObjectNil
-                              | otherwise = refute "invalid encoding for sum type"
+    => (GSumPack f) => Config -> Word64 -> Word64 -> m (f a)
+checkSumFromObject0 cfg size code
+  | code < size = sumFromObject cfg code size ObjectNil
+  | otherwise = refute "invalid encoding for sum type"
 
 
 checkSumFromObject
@@ -95,49 +108,50 @@ checkSumFromObject
        , Monad m
        , MonadValidate DecodeError m
        )
-    => (GSumPack f) => Word64 -> Word64 -> Object -> m (f a)
-checkSumFromObject size code x
-    | code < size = sumFromObject code size x
-    | otherwise   = refute "invalid encoding for sum type"
+    => (GSumPack f) => Config -> Word64 -> Word64 -> Object -> m (f a)
+checkSumFromObject cfg size code x
+  | code < size = sumFromObject cfg code size x
+  | otherwise   = refute "invalid encoding for sum type"
 
 
 class GSumPack f where
-    sumToObject :: Word64 -> Word64 -> f a -> Object
+    sumToObject :: Config -> Word64 -> Word64 -> f a -> Object
     sumFromObject
         :: ( Applicative m
            , Monad m
            , MonadValidate DecodeError m
            )
-        => Word64
+        => Config
+        -> Word64
         -> Word64
         -> Object
         -> m (f a)
 
 
 instance (GSumPack a, GSumPack b) => GSumPack (a :+: b) where
-    sumToObject code size = \case
-        L1 x -> sumToObject code sizeL x
-        R1 x -> sumToObject (code + sizeL) sizeR x
+    sumToObject cfg code size = \case
+        L1 x -> sumToObject cfg code sizeL x
+        R1 x -> sumToObject cfg (code + sizeL) sizeR x
       where
         sizeL = size `shiftR` 1
         sizeR = size - sizeL
 
-    sumFromObject code size x
-        | code < sizeL = L1 <$> sumFromObject code sizeL x
-        | otherwise    = R1 <$> sumFromObject (code - sizeL) sizeR x
+    sumFromObject cfg code size x
+        | code < sizeL = L1 <$> sumFromObject cfg code sizeL x
+        | otherwise    = R1 <$> sumFromObject cfg (code - sizeL) sizeR x
       where
         sizeL = size `shiftR` 1
         sizeR = size - sizeL
 
 
 instance GSumPack (C1 c U1) where
-    sumToObject code _ _ = toObject code
-    sumFromObject _ _ = gFromObject
+    sumToObject cfg code _ _ = toObject cfg code
+    sumFromObject cfg _ _ = gFromObject cfg
 
 
 instance GMessagePack a => GSumPack (C1 c a) where
-    sumToObject code _ x = toObject (code, gToObject x)
-    sumFromObject _ _ = gFromObject
+    sumToObject cfg code _ x = toObject cfg (code, gToObject cfg x)
+    sumFromObject cfg _ _ = gFromObject cfg
 
 
 -- Sum size.

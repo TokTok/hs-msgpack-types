@@ -1,10 +1,15 @@
+{-# OPTIONS_GHC -Wno-orphans #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE Trustworthy           #-}
 module Data.MessagePack.Types.DecodeError
     ( DecodeError
     , decodeError
     , errorMessages
     ) where
 
-import           Data.String (IsString (..))
+import           Control.Monad.Validate          (MonadValidate (..))
+import           Data.String                     (IsString (..))
+import           Text.ParserCombinators.ReadPrec (ReadPrec)
 
 data DecodeError = DecodeError
     { errorMessages :: [String]
@@ -19,3 +24,7 @@ instance IsString DecodeError where
 
 instance Semigroup DecodeError where
     DecodeError a <> DecodeError b = DecodeError (a <> b)
+
+instance MonadValidate DecodeError ReadPrec where
+    refute = fail . show
+    tolerate m = m >> return Nothing
