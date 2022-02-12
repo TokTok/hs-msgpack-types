@@ -7,18 +7,18 @@
 {-# LANGUAGE KindSignatures       #-}
 {-# LANGUAGE LambdaCase           #-}
 {-# LANGUAGE OverloadedStrings    #-}
-{-# LANGUAGE Trustworthy          #-}
 {-# LANGUAGE ScopedTypeVariables  #-}
 {-# LANGUAGE StrictData           #-}
+{-# LANGUAGE Trustworthy          #-}
 {-# LANGUAGE TypeOperators        #-}
 {-# LANGUAGE UndecidableInstances #-}
 module Data.MessagePack.Types.Generic () where
 
 import           Control.Applicative                (Applicative, (<$>), (<*>))
 import           Control.Monad                      ((>=>))
-import           Control.Monad.Validate             (MonadValidate, refute)
 import           Control.Monad.Trans.State.Strict   (StateT, evalStateT, get,
                                                      put)
+import           Control.Monad.Validate             (MonadValidate, refute)
 import           Data.Bits                          (shiftR)
 import           Data.Word                          (Word64)
 import           GHC.Generics
