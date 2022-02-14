@@ -3,16 +3,20 @@
 import re
 import urllib.request
 
-with urllib.request.urlopen("https://raw.githubusercontent.com/msgpack/msgpack/master/spec.md") as f:
+with urllib.request.urlopen(
+    "https://raw.githubusercontent.com/msgpack/msgpack/master/spec.md"
+) as f:
     html = f.read().decode("utf-8")
 
-print("""-- Generated file - DO NOT EDIT
+print(
+    """-- Generated file - DO NOT EDIT
 -- To regenerate, run:
 --   tools/gen-tags > src/Data/MessagePack/Tags.hs
 {-# LANGUAGE PatternSynonyms #-}
 {-# OPTIONS_GHC -Wno-missing-pattern-synonym-signatures #-}
 module Data.MessagePack.Tags where
-""")
+"""
+)
 
 in_overview = False
 for line in html.split("\n"):
@@ -26,8 +30,7 @@ for line in html.split("\n"):
         continue
 
     if in_overview:
-        match = re.fullmatch(
-            "(([^ |]| [^ |])+) +\| ([01]+) +\| (0x[0-9a-f]{2})", line)
+        match = re.fullmatch("(([^ |]| [^ |])+) +\| ([01]+) +\| (0x[0-9a-f]{2})", line)
         if match:
             tag = match.group(1).replace(" ", "_")
             bin_code = match.group(3)
