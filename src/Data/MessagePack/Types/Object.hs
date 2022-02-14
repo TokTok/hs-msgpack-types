@@ -1,8 +1,8 @@
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE DeriveGeneric      #-}
-{-# LANGUAGE Safe               #-}
 {-# LANGUAGE StrictData         #-}
+{-# LANGUAGE Trustworthy        #-}
 module Data.MessagePack.Types.Object
     ( Object (..)
     ) where
@@ -13,6 +13,7 @@ import qualified Data.ByteString           as S
 import           Data.Int                  (Int64)
 import qualified Data.Text                 as T
 import           Data.Typeable             (Typeable)
+import qualified Data.Vector               as V
 import           Data.Word                 (Word64, Word8)
 import           GHC.Generics              (Generic)
 import           Test.QuickCheck.Arbitrary (Arbitrary, arbitrary)
@@ -37,9 +38,9 @@ data Object
       -- ^ extending Raw type represents a UTF-8 string
     | ObjectBin                   S.ByteString
       -- ^ extending Raw type represents a byte array
-    | ObjectArray                 [Object]
+    | ObjectArray                 (V.Vector Object)
       -- ^ represents a sequence of objects
-    | ObjectMap                   [(Object, Object)]
+    | ObjectMap                   (V.Vector (Object, Object))
       -- ^ represents key-value pairs of objects
     | ObjectExt    {-# UNPACK #-} Word8 S.ByteString
       -- ^ represents a tuple of an integer and a byte array where
@@ -58,8 +59,8 @@ instance Arbitrary Object where
         , ObjectDouble <$> arbitrary
         , ObjectStr    <$> (T.pack <$> arbitrary)
         , ObjectBin    <$> (S.pack <$> arbitrary)
-        , ObjectArray  <$> Gen.resize (n `div` 2) arbitrary
-        , ObjectMap    <$> Gen.resize (n `div` 4) arbitrary
+        , ObjectArray  <$> (V.fromList <$> Gen.resize (n `div` 2) arbitrary)
+        , ObjectMap    <$> (V.fromList <$> Gen.resize (n `div` 4) arbitrary)
         , ObjectExt    <$> arbitrary <*> (S.pack <$> arbitrary)
         ]
         where negatives = Gen.choose (minBound, -1)
