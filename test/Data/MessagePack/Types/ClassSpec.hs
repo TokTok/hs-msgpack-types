@@ -126,23 +126,23 @@ spec = do
 
         it "produces msgpack values as expected" $ do
             toObject defaultConfig (SequenceTyCon 111 "hello" 2 3)
-                `shouldBe` ObjectArray
+                `shouldBe` ObjectArray (V.fromList
                                [ ObjectWord 0
-                               , ObjectArray [ObjectWord 111, ObjectStr "hello", ObjectWord 2, ObjectWord 3]
-                               ]
+                               , ObjectArray (V.fromList [ObjectWord 111, ObjectStr "hello", ObjectWord 2, ObjectWord 3])
+                               ])
             toObject defaultConfig EnumTyCon `shouldBe` ObjectWord 1
             toObject defaultConfig (RecordTyCon 222)
-                `shouldBe` ObjectArray [ObjectWord 2, ObjectWord 222]
+                `shouldBe` ObjectArray (V.fromList [ObjectWord 2, ObjectWord 222])
 
     describe "MessagePack" $ do
         it "handles wrong encodings correctly" $ do
-            (decode $ ObjectArray [ObjectWord 1, ObjectWord 222] :: Result MyType)
+            (decode $ ObjectArray (V.fromList [ObjectWord 1, ObjectWord 222]) :: Result MyType)
                 `shouldBe` Left ["invalid encoding for custom unit type"]
             (decode ObjectNil :: Result MyType)
                 `shouldBe` Left ["invalid encoding for tuple"]
-            (decode $ ObjectArray [ObjectWord 99999] :: Result MyType)
+            (decode $ ObjectArray (V.fromList [ObjectWord 99999]) :: Result MyType)
                 `shouldBe` Left ["invalid encoding for tuple"]
-            (decode $ ObjectArray [] :: Result MyType)
+            (decode $ ObjectArray V.empty :: Result MyType)
                 `shouldBe` Left ["invalid encoding for tuple"]
             (decode ObjectNil :: Result Int64)
                 `shouldBe` Left ["invalid encoding for integer type"]
@@ -170,7 +170,7 @@ spec = do
                 `shouldBe` Left ["invalid encoding for Assoc"]
             (decode ObjectNil :: Result Word64)
                 `shouldBe` Left ["invalid encoding for integer type"]
-            (decode (ObjectArray [ObjectWord 0]) :: Result ())
+            (decode (ObjectArray (V.fromList [ObjectWord 0])) :: Result ())
                 `shouldBe` Left ["invalid encoding for ()"]
             (decode ObjectNil :: Result (Int, Int))
                 `shouldBe` Left ["invalid encoding for tuple"]
@@ -186,7 +186,7 @@ spec = do
                 `shouldBe` Left ["invalid encoding for tuple"]
             (decode ObjectNil :: Result (Int, Int, Int, Int, Int, Int, Int, Int))
                 `shouldBe` Left ["invalid encoding for tuple"]
-            (decode $ ObjectArray [ObjectNil, ObjectNil] :: Result (Int, String))
+            (decode $ ObjectArray (V.fromList [ObjectNil, ObjectNil]) :: Result (Int, String))
                 `shouldBe` Left ["invalid encoding for integer type", "invalid encoding for Text"]
 
         it "has a working Read/Show implementation" $ property $ \(x :: Object) ->
@@ -195,7 +195,7 @@ spec = do
         it "can parse both nil and [] as ()" $ do
             (decode ObjectNil :: Result ())
                 `shouldBe` Right ()
-            (decode (ObjectArray []) :: Result ())
+            (decode (ObjectArray V.empty) :: Result ())
                 `shouldBe` Right ()
 
         it "can parse ints and doubles as floats" $ do

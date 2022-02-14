@@ -10,7 +10,7 @@ haskell_library(
     srcs = glob(["src/**/*.*hs"]),
     compiler_flags = ["-Wno-unused-imports"],
     src_strip_prefix = "src",
-    version = "0.2.1",
+    version = "0.3.0",
     visibility = ["//visibility:public"],
     deps = [
         hazel_library("QuickCheck"),

@@ -7,6 +7,7 @@
 {-# LANGUAGE OverloadedStrings   #-}
 {-# LANGUAGE StrictData          #-}
 {-# LANGUAGE Trustworthy         #-}
+{-# LANGUAGE ViewPatterns        #-}
 
 --------------------------------------------------------------------
 -- |
@@ -162,9 +163,9 @@ instance MessagePack Object where
 instance MessagePack () where
     toObject _ _ = ObjectNil
     fromObjectWith _ = \case
-        ObjectNil      -> return ()
-        ObjectArray [] -> return ()
-        _              -> refute "invalid encoding for ()"
+        ObjectNil                    -> return ()
+        ObjectArray (V.toList -> []) -> return ()
+        _                            -> refute "invalid encoding for ()"
 
 instance MessagePack Bool where
     toObject _ = ObjectBool
@@ -223,36 +224,36 @@ instance MessagePack LT.Text where
 -- Instances for array-like data structures.
 
 instance MessagePack a => MessagePack [a] where
-    toObject cfg = ObjectArray . map (toObject cfg)
+    toObject cfg = ObjectArray . V.fromList . map (toObject cfg)
     fromObjectWith cfg = \case
-        ObjectArray xs -> mapM (fromObjectWith cfg) xs
-        _              -> refute "invalid encoding for list"
+        ObjectArray o -> mapM (fromObjectWith cfg) (V.toList o)
+        _             -> refute "invalid encoding for list"
 
 instance MessagePack a => MessagePack (V.Vector a) where
-    toObject cfg = ObjectArray . map (toObject cfg) . V.toList
+    toObject cfg = ObjectArray . V.map (toObject cfg)
     fromObjectWith cfg = \case
-        ObjectArray o -> V.fromList <$> mapM (fromObjectWith cfg) o
+        ObjectArray o -> V.fromList <$> mapM (fromObjectWith cfg) (V.toList o)
         _             -> refute "invalid encoding for Vector"
 
 instance (MessagePack a, VU.Unbox a) => MessagePack (VU.Vector a) where
-    toObject cfg = ObjectArray . map (toObject cfg) . VU.toList
+    toObject cfg = ObjectArray . V.map (toObject cfg) . V.fromList . VU.toList
     fromObjectWith cfg = \case
-        ObjectArray o -> VU.fromList <$> mapM (fromObjectWith cfg) o
+        ObjectArray o -> VU.fromList . V.toList <$> V.mapM (fromObjectWith cfg) o
         _             -> refute "invalid encoding for Unboxed Vector"
 
 instance (MessagePack a, VS.Storable a) => MessagePack (VS.Vector a) where
-    toObject cfg = ObjectArray . map (toObject cfg) . VS.toList
+    toObject cfg = ObjectArray . V.map (toObject cfg) . V.fromList . VS.toList
     fromObjectWith cfg = \case
-        ObjectArray o -> VS.fromList <$> mapM (fromObjectWith cfg) o
+        ObjectArray o -> VS.fromList . V.toList <$> V.mapM (fromObjectWith cfg) o
         _             -> refute "invalid encoding for Storable Vector"
 
 -- Instances for map-like data structures.
 
 instance (MessagePack a, MessagePack b) => MessagePack (Assoc [(a, b)]) where
-    toObject cfg (Assoc xs) = ObjectMap $ map (toObject cfg *** toObject cfg) xs
+    toObject cfg (Assoc xs) = ObjectMap . V.fromList $ map (toObject cfg *** toObject cfg) xs
     fromObjectWith cfg = \case
         ObjectMap xs ->
-            Assoc <$> mapM (\(k, v) -> (,) <$> fromObjectWith cfg k <*> fromObjectWith cfg v) xs
+            Assoc <$> mapM (\(k, v) -> (,) <$> fromObjectWith cfg k <*> fromObjectWith cfg v) (V.toList xs)
         _ -> refute "invalid encoding for Assoc"
 
 instance (MessagePack k, MessagePack v, Ord k) => MessagePack (Map.Map k v) where
@@ -271,41 +272,41 @@ instance (MessagePack k, MessagePack v, Hashable k, Eq k) => MessagePack (HashMa
 -- Instances for various tuple arities.
 
 instance (MessagePack a1, MessagePack a2) => MessagePack (a1, a2) where
-    toObject cfg (a1, a2) = ObjectArray [toObject cfg a1, toObject cfg a2]
-    fromObjectWith cfg (ObjectArray [a1, a2]) = (,) <$> fromObjectWith cfg a1 <*> fromObjectWith cfg a2
+    toObject cfg (a1, a2) = ObjectArray $ V.fromList [toObject cfg a1, toObject cfg a2]
+    fromObjectWith cfg (ObjectArray (V.toList -> [a1, a2])) = (,) <$> fromObjectWith cfg a1 <*> fromObjectWith cfg a2
     fromObjectWith _ _                        = refute "invalid encoding for tuple"
 
 instance (MessagePack a1, MessagePack a2, MessagePack a3) => MessagePack (a1, a2, a3) where
-    toObject cfg (a1, a2, a3) = ObjectArray [toObject cfg a1, toObject cfg a2, toObject cfg a3]
-    fromObjectWith cfg (ObjectArray [a1, a2, a3]) = (,,) <$> fromObjectWith cfg a1 <*> fromObjectWith cfg a2 <*> fromObjectWith cfg a3
+    toObject cfg (a1, a2, a3) = ObjectArray $ V.fromList [toObject cfg a1, toObject cfg a2, toObject cfg a3]
+    fromObjectWith cfg (ObjectArray (V.toList -> [a1, a2, a3])) = (,,) <$> fromObjectWith cfg a1 <*> fromObjectWith cfg a2 <*> fromObjectWith cfg a3
     fromObjectWith _ _ = refute "invalid encoding for tuple"
 
 instance (MessagePack a1, MessagePack a2, MessagePack a3, MessagePack a4) => MessagePack (a1, a2, a3, a4) where
-    toObject cfg (a1, a2, a3, a4) = ObjectArray [toObject cfg a1, toObject cfg a2, toObject cfg a3, toObject cfg a4]
-    fromObjectWith cfg (ObjectArray [a1, a2, a3, a4]) = (,,,) <$> fromObjectWith cfg a1 <*> fromObjectWith cfg a2 <*> fromObjectWith cfg a3 <*> fromObjectWith cfg a4
+    toObject cfg (a1, a2, a3, a4) = ObjectArray $ V.fromList [toObject cfg a1, toObject cfg a2, toObject cfg a3, toObject cfg a4]
+    fromObjectWith cfg (ObjectArray (V.toList -> [a1, a2, a3, a4])) = (,,,) <$> fromObjectWith cfg a1 <*> fromObjectWith cfg a2 <*> fromObjectWith cfg a3 <*> fromObjectWith cfg a4
     fromObjectWith _ _ = refute "invalid encoding for tuple"
 
 instance (MessagePack a1, MessagePack a2, MessagePack a3, MessagePack a4, MessagePack a5) => MessagePack (a1, a2, a3, a4, a5) where
-    toObject cfg (a1, a2, a3, a4, a5) = ObjectArray [toObject cfg a1, toObject cfg a2, toObject cfg a3, toObject cfg a4, toObject cfg a5]
-    fromObjectWith cfg (ObjectArray [a1, a2, a3, a4, a5]) = (,,,,) <$> fromObjectWith cfg a1 <*> fromObjectWith cfg a2 <*> fromObjectWith cfg a3 <*> fromObjectWith cfg a4 <*> fromObjectWith cfg a5
+    toObject cfg (a1, a2, a3, a4, a5) = ObjectArray $ V.fromList [toObject cfg a1, toObject cfg a2, toObject cfg a3, toObject cfg a4, toObject cfg a5]
+    fromObjectWith cfg (ObjectArray (V.toList -> [a1, a2, a3, a4, a5])) = (,,,,) <$> fromObjectWith cfg a1 <*> fromObjectWith cfg a2 <*> fromObjectWith cfg a3 <*> fromObjectWith cfg a4 <*> fromObjectWith cfg a5
     fromObjectWith _ _ = refute "invalid encoding for tuple"
 
 instance (MessagePack a1, MessagePack a2, MessagePack a3, MessagePack a4, MessagePack a5, MessagePack a6) => MessagePack (a1, a2, a3, a4, a5, a6) where
-    toObject cfg (a1, a2, a3, a4, a5, a6) = ObjectArray [toObject cfg a1, toObject cfg a2, toObject cfg a3, toObject cfg a4, toObject cfg a5, toObject cfg a6]
-    fromObjectWith cfg (ObjectArray [a1, a2, a3, a4, a5, a6]) = (,,,,,) <$> fromObjectWith cfg a1 <*> fromObjectWith cfg a2 <*> fromObjectWith cfg a3 <*> fromObjectWith cfg a4 <*> fromObjectWith cfg a5 <*> fromObjectWith cfg a6
+    toObject cfg (a1, a2, a3, a4, a5, a6) = ObjectArray $ V.fromList [toObject cfg a1, toObject cfg a2, toObject cfg a3, toObject cfg a4, toObject cfg a5, toObject cfg a6]
+    fromObjectWith cfg (ObjectArray (V.toList -> [a1, a2, a3, a4, a5, a6])) = (,,,,,) <$> fromObjectWith cfg a1 <*> fromObjectWith cfg a2 <*> fromObjectWith cfg a3 <*> fromObjectWith cfg a4 <*> fromObjectWith cfg a5 <*> fromObjectWith cfg a6
     fromObjectWith _ _ = refute "invalid encoding for tuple"
 
 instance (MessagePack a1, MessagePack a2, MessagePack a3, MessagePack a4, MessagePack a5, MessagePack a6, MessagePack a7) => MessagePack (a1, a2, a3, a4, a5, a6, a7) where
-    toObject cfg (a1, a2, a3, a4, a5, a6, a7) = ObjectArray [toObject cfg a1, toObject cfg a2, toObject cfg a3, toObject cfg a4, toObject cfg a5, toObject cfg a6, toObject cfg a7]
-    fromObjectWith cfg (ObjectArray [a1, a2, a3, a4, a5, a6, a7]) = (,,,,,,) <$> fromObjectWith cfg a1 <*> fromObjectWith cfg a2 <*> fromObjectWith cfg a3 <*> fromObjectWith cfg a4 <*> fromObjectWith cfg a5 <*> fromObjectWith cfg a6 <*> fromObjectWith cfg a7
+    toObject cfg (a1, a2, a3, a4, a5, a6, a7) = ObjectArray $ V.fromList [toObject cfg a1, toObject cfg a2, toObject cfg a3, toObject cfg a4, toObject cfg a5, toObject cfg a6, toObject cfg a7]
+    fromObjectWith cfg (ObjectArray (V.toList -> [a1, a2, a3, a4, a5, a6, a7])) = (,,,,,,) <$> fromObjectWith cfg a1 <*> fromObjectWith cfg a2 <*> fromObjectWith cfg a3 <*> fromObjectWith cfg a4 <*> fromObjectWith cfg a5 <*> fromObjectWith cfg a6 <*> fromObjectWith cfg a7
     fromObjectWith _ _ = refute "invalid encoding for tuple"
 
 instance (MessagePack a1, MessagePack a2, MessagePack a3, MessagePack a4, MessagePack a5, MessagePack a6, MessagePack a7, MessagePack a8) => MessagePack (a1, a2, a3, a4, a5, a6, a7, a8) where
-    toObject cfg (a1, a2, a3, a4, a5, a6, a7, a8) = ObjectArray [toObject cfg a1, toObject cfg a2, toObject cfg a3, toObject cfg a4, toObject cfg a5, toObject cfg a6, toObject cfg a7, toObject cfg a8]
-    fromObjectWith cfg (ObjectArray [a1, a2, a3, a4, a5, a6, a7, a8]) = (,,,,,,,) <$> fromObjectWith cfg a1 <*> fromObjectWith cfg a2 <*> fromObjectWith cfg a3 <*> fromObjectWith cfg a4 <*> fromObjectWith cfg a5 <*> fromObjectWith cfg a6 <*> fromObjectWith cfg a7 <*> fromObjectWith cfg a8
+    toObject cfg (a1, a2, a3, a4, a5, a6, a7, a8) = ObjectArray $ V.fromList [toObject cfg a1, toObject cfg a2, toObject cfg a3, toObject cfg a4, toObject cfg a5, toObject cfg a6, toObject cfg a7, toObject cfg a8]
+    fromObjectWith cfg (ObjectArray (V.toList -> [a1, a2, a3, a4, a5, a6, a7, a8])) = (,,,,,,,) <$> fromObjectWith cfg a1 <*> fromObjectWith cfg a2 <*> fromObjectWith cfg a3 <*> fromObjectWith cfg a4 <*> fromObjectWith cfg a5 <*> fromObjectWith cfg a6 <*> fromObjectWith cfg a7 <*> fromObjectWith cfg a8
     fromObjectWith _ _ = refute "invalid encoding for tuple"
 
 instance (MessagePack a1, MessagePack a2, MessagePack a3, MessagePack a4, MessagePack a5, MessagePack a6, MessagePack a7, MessagePack a8, MessagePack a9) => MessagePack (a1, a2, a3, a4, a5, a6, a7, a8, a9) where
-    toObject cfg (a1, a2, a3, a4, a5, a6, a7, a8, a9) = ObjectArray [toObject cfg a1, toObject cfg a2, toObject cfg a3, toObject cfg a4, toObject cfg a5, toObject cfg a6, toObject cfg a7, toObject cfg a8, toObject cfg a9]
-    fromObjectWith cfg (ObjectArray [a1, a2, a3, a4, a5, a6, a7, a8, a9]) = (,,,,,,,,) <$> fromObjectWith cfg a1 <*> fromObjectWith cfg a2 <*> fromObjectWith cfg a3 <*> fromObjectWith cfg a4 <*> fromObjectWith cfg a5 <*> fromObjectWith cfg a6 <*> fromObjectWith cfg a7 <*> fromObjectWith cfg a8 <*> fromObjectWith cfg a9
+    toObject cfg (a1, a2, a3, a4, a5, a6, a7, a8, a9) = ObjectArray $ V.fromList [toObject cfg a1, toObject cfg a2, toObject cfg a3, toObject cfg a4, toObject cfg a5, toObject cfg a6, toObject cfg a7, toObject cfg a8, toObject cfg a9]
+    fromObjectWith cfg (ObjectArray (V.toList -> [a1, a2, a3, a4, a5, a6, a7, a8, a9])) = (,,,,,,,,) <$> fromObjectWith cfg a1 <*> fromObjectWith cfg a2 <*> fromObjectWith cfg a3 <*> fromObjectWith cfg a4 <*> fromObjectWith cfg a5 <*> fromObjectWith cfg a6 <*> fromObjectWith cfg a7 <*> fromObjectWith cfg a8 <*> fromObjectWith cfg a9
     fromObjectWith _ _ = refute "invalid encoding for tuple"
