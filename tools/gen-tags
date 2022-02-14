@@ -26,7 +26,8 @@ for line in html.split("\n"):
         continue
 
     if in_overview:
-        match = re.fullmatch("(([^ |]| [^ |])+) +\| ([01]+) +\| (0x[0-9a-f]{2})", line)
+        match = re.fullmatch(
+            "(([^ |]| [^ |])+) +\| ([01]+) +\| (0x[0-9a-f]{2})", line)
         if match:
             tag = match.group(1).replace(" ", "_")
             bin_code = match.group(3)
