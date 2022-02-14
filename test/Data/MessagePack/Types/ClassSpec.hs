@@ -19,6 +19,7 @@ import           Data.Hashable                     (Hashable)
 import           Data.Int                          (Int16, Int32, Int64, Int8)
 import qualified Data.IntMap.Strict                as IntMap
 import qualified Data.Map                          as Map
+import           Data.MessagePack.Arbitrary        ()
 import           Data.MessagePack.Types            (Assoc (..),
                                                     MessagePack (..),
                                                     Object (..), defaultConfig,

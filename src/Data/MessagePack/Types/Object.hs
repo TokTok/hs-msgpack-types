@@ -7,17 +7,15 @@ module Data.MessagePack.Types.Object
     ( Object (..)
     ) where
 
-import           Control.Applicative       ((<$>), (<*>))
-import           Control.DeepSeq           (NFData (..))
-import qualified Data.ByteString           as S
-import           Data.Int                  (Int64)
-import qualified Data.Text                 as T
-import           Data.Typeable             (Typeable)
-import qualified Data.Vector               as V
-import           Data.Word                 (Word64, Word8)
-import           GHC.Generics              (Generic)
-import           Test.QuickCheck.Arbitrary (Arbitrary, arbitrary)
-import qualified Test.QuickCheck.Gen       as Gen
+import           Control.Applicative ((<$>), (<*>))
+import           Control.DeepSeq     (NFData (..))
+import qualified Data.ByteString     as S
+import           Data.Int            (Int64)
+import qualified Data.Text           as T
+import           Data.Typeable       (Typeable)
+import qualified Data.Vector         as V
+import           Data.Word           (Word64, Word8)
+import           GHC.Generics        (Generic)
 
 
 -- | Object Representation of MessagePack data.
@@ -48,19 +46,3 @@ data Object
     deriving (Read, Show, Eq, Ord, Typeable, Generic)
 
 instance NFData Object
-
-instance Arbitrary Object where
-    arbitrary = Gen.sized $ \n -> Gen.oneof
-        [ pure ObjectNil
-        , ObjectBool   <$> arbitrary
-        , ObjectInt    <$> negatives
-        , ObjectWord   <$> arbitrary
-        , ObjectFloat  <$> arbitrary
-        , ObjectDouble <$> arbitrary
-        , ObjectStr    <$> (T.pack <$> arbitrary)
-        , ObjectBin    <$> (S.pack <$> arbitrary)
-        , ObjectArray  <$> (V.fromList <$> Gen.resize (n `div` 2) arbitrary)
-        , ObjectMap    <$> (V.fromList <$> Gen.resize (n `div` 4) arbitrary)
-        , ObjectExt    <$> arbitrary <*> (S.pack <$> arbitrary)
-        ]
-        where negatives = Gen.choose (minBound, -1)
