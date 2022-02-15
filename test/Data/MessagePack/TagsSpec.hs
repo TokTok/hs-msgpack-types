@@ -10,7 +10,7 @@ spec =
         it "has a working Read/Show implementation" $ do
             (TAG_nil :: Int) `shouldSatisfy` \case
                 TAG_nil -> True
-                _ -> False
+                _       -> False
             (TAG_nil :: Integer) `shouldSatisfy` \case
                 TAG_nil -> True
-                _ -> False
+                _       -> False
