@@ -1,5 +1,5 @@
 name:                 msgpack-types
-version:              0.3.1
+version:              0.3.2
 synopsis:             A Haskell implementation of MessagePack.
 homepage:             http://msgpack.org/
 license:              BSD3
@@ -30,6 +30,7 @@ library
       -Wall
       -fno-warn-unused-imports
   exposed-modules:
+      Data.MessagePack.Tags
       Data.MessagePack.Types
   other-modules:
       Data.MessagePack.Types.Assoc
@@ -39,7 +40,6 @@ library
       Data.MessagePack.Types.Object
   build-depends:
       base < 5
-    , QuickCheck
     , bytestring
     , containers
     , deepseq
@@ -56,9 +56,10 @@ test-suite testsuite
   hs-source-dirs: test
   main-is: testsuite.hs
   other-modules:
-      Data.MessagePack.Arbitrary
+      Data.MessagePack.TagsSpec
       Data.MessagePack.Types.AssocSpec
       Data.MessagePack.Types.ClassSpec
+      Test.QuickCheck.Instances.MessagePack
   ghc-options:
       -Wall
       -fno-warn-unused-imports
@@ -75,6 +76,7 @@ test-suite testsuite
     , hspec
     , monad-validate
     , msgpack-types
+    , quickcheck-instances
     , text
     , unordered-containers
     , vector

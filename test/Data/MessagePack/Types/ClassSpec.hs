@@ -7,37 +7,40 @@
 {-# LANGUAGE Trustworthy         #-}
 module Data.MessagePack.Types.ClassSpec where
 
-import           Control.Applicative               (empty, pure, (<$>), (<*>),
-                                                    (<|>))
-import           Control.Monad                     (mplus, mzero)
-import           Control.Monad.Validate            (MonadValidate (..),
-                                                    runValidate)
-import qualified Data.ByteString                   as BS
-import qualified Data.ByteString.Lazy              as LBS
-import qualified Data.HashMap.Strict               as HashMap
-import           Data.Hashable                     (Hashable)
-import           Data.Int                          (Int16, Int32, Int64, Int8)
-import qualified Data.IntMap.Strict                as IntMap
-import qualified Data.Map                          as Map
-import           Data.MessagePack.Arbitrary        ()
-import           Data.MessagePack.Types            (Assoc (..),
-                                                    MessagePack (..),
-                                                    Object (..), defaultConfig,
-                                                    errorMessages)
-import qualified Data.Text                         as Text
-import qualified Data.Text.Lazy                    as LText
-import qualified Data.Vector                       as V
-import qualified Data.Vector.Storable              as VS
-import qualified Data.Vector.Unboxed               as VU
-import           Data.Word                         (Word, Word16, Word32,
-                                                    Word64, Word8)
-import           GHC.Generics                      (Generic)
-import           Test.Hspec                        (Spec, describe, it,
-                                                    shouldBe, shouldSatisfy)
-import           Test.QuickCheck                   (Arbitrary (..),
-                                                    genericShrink, property,
-                                                    withMaxSuccess)
-import           Test.QuickCheck.Arbitrary.Generic (genericArbitrary)
+import           Control.Applicative                   (empty, pure, (<$>),
+                                                        (<*>), (<|>))
+import           Control.Monad                         (mplus, mzero)
+import           Control.Monad.Validate                (MonadValidate (..),
+                                                        runValidate)
+import qualified Data.ByteString                       as BS
+import qualified Data.ByteString.Lazy                  as LBS
+import           Data.Hashable                         (Hashable)
+import qualified Data.HashMap.Strict                   as HashMap
+import           Data.Int                              (Int16, Int32, Int64,
+                                                        Int8)
+import qualified Data.IntMap.Strict                    as IntMap
+import qualified Data.Map                              as Map
+import           Data.MessagePack.Types                (Assoc (..),
+                                                        MessagePack (..),
+                                                        Object (..),
+                                                        defaultConfig,
+                                                        errorMessages)
+import qualified Data.Text                             as Text
+import qualified Data.Text.Lazy                        as LText
+import qualified Data.Vector                           as V
+import qualified Data.Vector.Storable                  as VS
+import qualified Data.Vector.Unboxed                   as VU
+import           Data.Word                             (Word, Word16, Word32,
+                                                        Word64, Word8)
+import           GHC.Generics                          (Generic)
+import           Test.Hspec                            (Spec, describe, it,
+                                                        shouldBe, shouldSatisfy)
+import           Test.QuickCheck                       (Arbitrary (..),
+                                                        genericShrink, property,
+                                                        withMaxSuccess)
+import           Test.QuickCheck.Arbitrary.Generic     (genericArbitrary)
+import           Test.QuickCheck.Instances             ()
+import           Test.QuickCheck.Instances.MessagePack ()
 
 data MyType
     = SequenceTyCon Int String Int Int
@@ -81,23 +84,6 @@ instance MessagePack MyType
 instance Arbitrary MyType where
     arbitrary = genericArbitrary
     shrink = genericShrink
-
-instance Arbitrary BS.ByteString where
-    arbitrary = BS.pack . take 10 <$> arbitrary
-instance Arbitrary LBS.ByteString where
-    arbitrary = LBS.pack . take 10 <$> arbitrary
-instance Arbitrary Text.Text where
-    arbitrary = Text.pack . take 10 <$> arbitrary
-instance Arbitrary LText.Text where
-    arbitrary = LText.pack . take 10 <$> arbitrary
-instance Arbitrary a => Arbitrary (V.Vector a) where
-    arbitrary = V.fromList <$> arbitrary
-instance (Arbitrary a, VS.Storable a) => Arbitrary (VS.Vector a) where
-    arbitrary = VS.fromList <$> arbitrary
-instance (Arbitrary a, VU.Unbox a) => Arbitrary (VU.Vector a) where
-    arbitrary = VU.fromList <$> arbitrary
-instance (Arbitrary a, Hashable a, Eq a, Arbitrary b) => Arbitrary (HashMap.HashMap a b) where
-    arbitrary = HashMap.fromList <$> arbitrary
 
 
 type Result a = Either [String] a

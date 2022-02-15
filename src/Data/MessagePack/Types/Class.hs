@@ -30,7 +30,6 @@ module Data.MessagePack.Types.Class
     , defaultConfig
     ) where
 
-import           Control.Applicative                (Applicative, (<$>), (<*>))
 import           Control.Arrow                      ((***))
 import           Control.Monad.Validate             (MonadValidate (..))
 import qualified Data.ByteString                    as S
@@ -45,8 +44,8 @@ import qualified Data.Text.Lazy                     as LT
 import qualified Data.Vector                        as V
 import qualified Data.Vector.Storable               as VS
 import qualified Data.Vector.Unboxed                as VU
-import           Data.Word                          (Word, Word16, Word32,
-                                                     Word64, Word8)
+import           Data.Word                          (Word16, Word32, Word64,
+                                                     Word8)
 import           GHC.Generics                       (Generic, Rep, from, to)
 
 import           Data.MessagePack.Types.Assoc       (Assoc (..))
