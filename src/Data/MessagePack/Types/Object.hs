@@ -1,4 +1,3 @@
-{-# OPTIONS_GHC -fno-warn-orphans #-}
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE DeriveGeneric      #-}
 {-# LANGUAGE StrictData         #-}
@@ -7,15 +6,14 @@ module Data.MessagePack.Types.Object
     ( Object (..)
     ) where
 
-import           Control.Applicative ((<$>), (<*>))
-import           Control.DeepSeq     (NFData (..))
-import qualified Data.ByteString     as S
-import           Data.Int            (Int64)
-import qualified Data.Text           as T
-import           Data.Typeable       (Typeable)
-import qualified Data.Vector         as V
-import           Data.Word           (Word64, Word8)
-import           GHC.Generics        (Generic)
+import           Control.DeepSeq (NFData (..))
+import qualified Data.ByteString as S
+import           Data.Int        (Int64)
+import qualified Data.Text       as T
+import           Data.Typeable   (Typeable)
+import qualified Data.Vector     as V
+import           Data.Word       (Word64, Word8)
+import           GHC.Generics    (Generic)
 
 
 -- | Object Representation of MessagePack data.

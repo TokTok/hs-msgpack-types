@@ -21,10 +21,8 @@ module Data.MessagePack.Types.Assoc
     ( Assoc (..)
     ) where
 
-import           Control.Applicative       ((<$>))
-import           Control.DeepSeq           (NFData)
-import           Data.Typeable             (Typeable)
-import           Test.QuickCheck.Arbitrary (Arbitrary, arbitrary)
+import           Control.DeepSeq (NFData)
+import           Data.Typeable   (Typeable)
 
 -- not defined for general Functor for performance reason.
 -- (ie. you would want to write custom instances for each type using
@@ -32,6 +30,3 @@ import           Test.QuickCheck.Arbitrary (Arbitrary, arbitrary)
 newtype Assoc a
     = Assoc { unAssoc :: a }
     deriving (Show, Read, Eq, Ord, Typeable, NFData)
-
-instance Arbitrary a => Arbitrary (Assoc a) where
-    arbitrary = Assoc <$> arbitrary

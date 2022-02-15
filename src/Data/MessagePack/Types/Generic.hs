@@ -14,8 +14,6 @@
 {-# LANGUAGE UndecidableInstances #-}
 module Data.MessagePack.Types.Generic () where
 
-import           Control.Applicative                (Applicative, (<$>), (<*>))
-import           Control.Monad                      ((>=>))
 import           Control.Monad.Trans.State.Strict   (StateT, evalStateT, get,
                                                      put)
 import           Control.Monad.Validate             (MonadValidate, refute)
