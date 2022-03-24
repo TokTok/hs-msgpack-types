@@ -14,7 +14,7 @@ import           Text.ParserCombinators.ReadPrec (ReadPrec)
 data DecodeError = DecodeError
     { errorMessages :: [String]
     }
-    deriving (Show)
+    deriving (Show, Eq)
 
 decodeError :: String -> DecodeError
 decodeError = DecodeError . (:[])
