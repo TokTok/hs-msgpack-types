@@ -1,5 +1,5 @@
 name:                 msgpack-types
-version:              0.3.2
+version:              0.3.3
 synopsis:             A Haskell implementation of MessagePack.
 homepage:             http://msgpack.org/
 license:              BSD3
@@ -28,7 +28,7 @@ library
       src
   ghc-options:
       -Wall
-      -fno-warn-unused-imports
+      -Wno-unused-imports
   exposed-modules:
       Data.MessagePack.Tags
       Data.MessagePack.Types
@@ -62,7 +62,7 @@ test-suite testsuite
       Test.QuickCheck.Instances.MessagePack
   ghc-options:
       -Wall
-      -fno-warn-unused-imports
+      -Wno-unused-imports
   build-tool-depends:
       hspec-discover:hspec-discover
   build-depends:
