@@ -1,3 +1,4 @@
+{-# OPTIONS_GHC -fconstraint-solver-iterations=10 #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 {-# LANGUAGE DeriveGeneric       #-}
 {-# LANGUAGE LambdaCase          #-}
@@ -14,8 +15,8 @@ import           Control.Monad.Validate                (MonadValidate (..),
                                                         runValidate)
 import qualified Data.ByteString                       as BS
 import qualified Data.ByteString.Lazy                  as LBS
-import qualified Data.HashMap.Strict                   as HashMap
 import           Data.Hashable                         (Hashable)
+import qualified Data.HashMap.Strict                   as HashMap
 import           Data.Int                              (Int16, Int32, Int64,
                                                         Int8)
 import qualified Data.IntMap.Strict                    as IntMap

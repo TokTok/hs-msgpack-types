@@ -9,7 +9,7 @@ haskell_library(
     name = "hs-msgpack-types",
     srcs = glob(["src/**/*.*hs"]),
     src_strip_prefix = "src",
-    version = "0.3.2",
+    version = "0.3.3",
     visibility = ["//visibility:public"],
     deps = [
         hazel_library("base"),

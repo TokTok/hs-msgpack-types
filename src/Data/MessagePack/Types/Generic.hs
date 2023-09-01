@@ -17,6 +17,7 @@ import           Control.Monad.Trans.State.Strict   (StateT, evalStateT, get,
                                                      put)
 import           Control.Monad.Validate             (MonadValidate, refute)
 import           Data.Bits                          (shiftR)
+import           Data.Kind                          (Type)
 import           Data.Word                          (Word64)
 import           GHC.Generics
 
@@ -156,7 +157,7 @@ instance GMessagePack a => GSumPack (C1 c a) where
 class SumSize f where
     sumSize :: Tagged f Word64
 
-newtype Tagged (s :: * -> *) b = Tagged { unTagged :: b }
+newtype Tagged (s :: Type -> Type) b = Tagged { unTagged :: b }
 
 instance (SumSize a, SumSize b) => SumSize (a :+: b) where
     sumSize = Tagged $ unTagged (sumSize :: Tagged a Word64) + unTagged
