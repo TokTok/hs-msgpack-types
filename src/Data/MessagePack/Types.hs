@@ -1,4 +1,3 @@
-{-# LANGUAGE Trustworthy #-}
 module Data.MessagePack.Types
     ( Assoc (..)
     , Object (..)

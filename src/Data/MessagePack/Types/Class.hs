@@ -6,7 +6,6 @@
 {-# LANGUAGE LambdaCase          #-}
 {-# LANGUAGE OverloadedStrings   #-}
 {-# LANGUAGE StrictData          #-}
-{-# LANGUAGE Trustworthy         #-}
 {-# LANGUAGE ViewPatterns        #-}
 
 --------------------------------------------------------------------

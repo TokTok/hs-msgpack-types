@@ -8,7 +8,6 @@
 {-# LANGUAGE OverloadedStrings    #-}
 {-# LANGUAGE ScopedTypeVariables  #-}
 {-# LANGUAGE StrictData           #-}
-{-# LANGUAGE Trustworthy          #-}
 {-# LANGUAGE TypeOperators        #-}
 {-# LANGUAGE UndecidableInstances #-}
 module Data.MessagePack.Types.Generic () where
