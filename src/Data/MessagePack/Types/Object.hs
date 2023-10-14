@@ -1,7 +1,6 @@
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE DeriveGeneric      #-}
 {-# LANGUAGE StrictData         #-}
-{-# LANGUAGE Trustworthy        #-}
 module Data.MessagePack.Types.Object
     ( Object (..)
     ) where

@@ -1,6 +1,5 @@
 {-# OPTIONS_GHC -Wno-orphans #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE Trustworthy           #-}
 module Data.MessagePack.Types.DecodeError
     ( DecodeError
     , decodeError
