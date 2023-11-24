@@ -12,6 +12,7 @@ print("""-- Generated file - DO NOT EDIT
 --   tools/gen-tags > src/Data/MessagePack/Tags.hs
 {-# LANGUAGE PatternSynonyms #-}
 {-# OPTIONS_GHC -Wno-missing-pattern-synonym-signatures #-}
+{-# OPTIONS_GHC -Wno-missing-signatures                 #-}
 module Data.MessagePack.Tags where
 """)
 
@@ -28,7 +29,7 @@ for line in html.split("\n"):
 
     if in_overview:
         match = re.fullmatch(
-            "(([^ |]| [^ |])+) +\| ([01]+) +\| (0x[0-9a-f]{2})", line)
+                "(([^ |]| [^ |])+) +\| ([01]+) +\| (0x[0-9a-f]{2})", line)
         if match:
             tag = match.group(1).replace(" ", "_")
             bin_code = match.group(3)

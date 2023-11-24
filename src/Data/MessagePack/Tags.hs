@@ -3,6 +3,7 @@
 --   tools/gen-tags > src/Data/MessagePack/Tags.hs
 {-# LANGUAGE PatternSynonyms #-}
 {-# OPTIONS_GHC -Wno-missing-pattern-synonym-signatures #-}
+{-# OPTIONS_GHC -Wno-missing-signatures                 #-}
 module Data.MessagePack.Tags where
 
 pattern TAG_nil       = 0xc0  -- 11000000
