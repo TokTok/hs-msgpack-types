@@ -5,8 +5,7 @@ module Data.MessagePack.Types.AssocSpec where
 import           Data.MessagePack.Types                (Assoc (..))
 import           Test.Hspec                            (Spec, describe, it,
                                                         shouldBe)
-import           Test.QuickCheck                       (Arbitrary (..),
-                                                        property)
+import           Test.QuickCheck                       (property)
 import           Test.QuickCheck.Instances.MessagePack ()
 
 spec :: Spec

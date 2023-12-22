@@ -8,14 +8,9 @@
 {-# LANGUAGE Trustworthy         #-}
 module Data.MessagePack.Types.ClassSpec where
 
-import           Control.Applicative                   (empty, pure, (<$>),
-                                                        (<*>), (<|>))
-import           Control.Monad                         (mplus, mzero)
-import           Control.Monad.Validate                (MonadValidate (..),
-                                                        runValidate)
+import           Control.Monad.Validate                (runValidate)
 import qualified Data.ByteString                       as BS
 import qualified Data.ByteString.Lazy                  as LBS
-import           Data.Hashable                         (Hashable)
 import qualified Data.HashMap.Strict                   as HashMap
 import           Data.Int                              (Int16, Int32, Int64,
                                                         Int8)
@@ -31,8 +26,8 @@ import qualified Data.Text.Lazy                        as LText
 import qualified Data.Vector                           as V
 import qualified Data.Vector.Storable                  as VS
 import qualified Data.Vector.Unboxed                   as VU
-import           Data.Word                             (Word, Word16, Word32,
-                                                        Word64, Word8)
+import           Data.Word                             (Word16, Word32, Word64,
+                                                        Word8)
 import           GHC.Generics                          (Generic)
 import           Test.Hspec                            (Spec, describe, it,
                                                         shouldBe, shouldSatisfy)

@@ -27,7 +27,6 @@ haskell_library(
 hspec_test(
     name = "testsuite",
     size = "small",
-    compiler_flags = ["-Wno-unused-imports"],
     deps = [
         ":hs-msgpack-types",
         "//third_party/haskell:QuickCheck",
